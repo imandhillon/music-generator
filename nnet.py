@@ -10,7 +10,7 @@ torch.manual_seed(1)
 class LSTM(nn.Module):
 
 	def __init__(self, input_dim, hidden_dim, batch_size, output_dim=1,
-					num_layers=2):
+					num_layers=1):
 		super(LSTM, self).__init__()
 		self.input_dim = input_dim
 		self.hidden_dim = hidden_dim
@@ -22,6 +22,7 @@ class LSTM(nn.Module):
 
 		# Define the output layer
 		self.linear = nn.Linear(self.hidden_dim, output_dim)
+		self.hidden = self.init_hidden()
 
 	def init_hidden(self):
 		# This is what we'll initialise our hidden state as
@@ -33,16 +34,27 @@ class LSTM(nn.Module):
 		# shape of lstm_out: [input_size, batch_size, hidden_dim]
 		# shape of self.hidden: (a, b), where a and b both 
 		# have shape (num_layers, batch_size, hidden_dim).
-		print(type(input), '\nopopopopop\n\n') 
-		input = input.reshape(-1, self.batch_size, len(input))
-		print(input.shape)
-		input = torch.from_numpy(input)
-		print(type(input[0][0][0]), 'qqq', input[0][0][0])
+
+		'''
+		print(type(input), '\nopopopopop\n\n')
+		print(input.shape, len(input[0]), self.batch_size)
+		#input = input.reshape(self.batch_size, -1, len(input[0][0]))
+
+		print(input.shape, len(input[0]), self.batch_size)'''
+
+		#input = torch.from_numpy(input)
+		print(input.shape, 'lplplplplp')
+
+		print(type(input[0][0][0]), '\n\nqqq\n', input.shape, self.hidden[0].shape)
 		#lstm_out, self.hidden = self.lstm(input.view(len(input), self.batch_size))
-		lstm_out, self.hidden = self.lstm(input.float())
+		lstm_out, self.hidden = self.lstm(input.float().view(len(input), self.batch_size, -1), self.hidden)
 		
 		# Only take the output from the final timetep
 		# Can pass on the entirety of lstm_out to the next layer if it is a seq2seq prediction
+		print('\npred\n')
+		print(self.hidden, lstm_out.shape)
+		#lstm_out = lstm_out.data.numpy()
+
 		y_pred = self.linear(lstm_out[-1].view(self.batch_size, -1))
 		return y_pred.view(-1)
 

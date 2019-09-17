@@ -159,11 +159,19 @@ def build_model(x_data, y_data, nb_epochs=1, seq_len=215, block_size=2048):
 	#input_shape = (seq_len, block_size)
 	learning_rate=0.01
 	num_epochs = 1
-	lstm = torch.nn.LSTM(input_size=block_size, hidden_size=block_size)
+	batch_size = 2
+	#lstm = torch.nn.LSTM(input_size=block_size, hidden_size=block_size)
 	print(x_data.shape,'xshape')
 	print(y_data.shape, 'yyy')
+	
+	x_data = np.swapaxes(x_data, 1, 0)
+	y_data = np.swapaxes(y_data, 1,0)
+
+	print(x_data.shape, type(x_data),'\noopoppo\n')
+
 	dims = x_data.shape
-	mylstm = nnet.LSTM(dims[0], dims[1], dims[2])
+	#exit()
+	mylstm = nnet.LSTM(dims[2], 32, batch_size)
 
 	loss_fn = torch.nn.MSELoss(size_average=False)
 	optimiser = torch.optim.Adam(mylstm.parameters(), lr=learning_rate)
@@ -173,6 +181,8 @@ def build_model(x_data, y_data, nb_epochs=1, seq_len=215, block_size=2048):
 	#####################
 
 	hist = np.zeros(num_epochs)
+	x_data = torch.tensor(x_data)
+	y_data = torch.tensor(y_data)
 
 	for t in range(num_epochs):
 		# Clear stored gradient
@@ -184,7 +194,8 @@ def build_model(x_data, y_data, nb_epochs=1, seq_len=215, block_size=2048):
 		
 		# Forward pass
 		y_pred = mylstm(x_data)
-
+		print(type(y_pred), type(y_data))
+		exit()
 		loss = loss_fn(y_pred, y_data)
 		if t % 100 == 0:
 			print("Epoch ", t, "MSE: ", loss.item())
@@ -199,7 +210,7 @@ def build_model(x_data, y_data, nb_epochs=1, seq_len=215, block_size=2048):
 		# Update parameters
 		optimiser.step()
 
-	return lstm
+	return mylstm
 
 def make_brain(timestep=215, block_size=2048):
 	print('adding layers...\n')
