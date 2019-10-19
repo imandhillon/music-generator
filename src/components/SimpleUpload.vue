@@ -58,13 +58,13 @@
         </div> -->
 
         <span v-if="file" class="file-name">
-            {{file.name}}
+            {{file.name}} 
         </span>
 
         <div class="field">
             <button class="button is-info">Send</button>
 
-            <button v-on:click="test" class="button gen">Generate Audio!</button>
+            <button v-on:click="test" class="button gen">Generate Audio!!</button>
         </div>
 
 
@@ -131,6 +131,7 @@ export default {
                 this.error = false
                 this.msg = ""
                 this.canGen = true
+                console.log(file)
             }
             else {
                 this.error = true

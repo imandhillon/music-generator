@@ -18,6 +18,7 @@ from keras.layers import LSTM, Dense, Activation, Dropout
 from keras.preprocessing import sequence
 from keras.models import Sequential
 from keras.optimizers import RMSprop
+from keras.models import load_model
 
 import torch
 import torch.nn as nn
@@ -25,6 +26,18 @@ import torch.nn.functional as F
 import torch.optim as optim
 
 torch.manual_seed(1)
+
+from flask import Flask, jsonify, request
+from flask_cors import CORS
+from flair.models import TextClassifier
+from flair.data import Sentence
+from flask import session
+
+app = Flask(__name__)
+app.secret_key = "super_secret_key"
+
+CORS(app)
+#gen_model = GenModel.load_from_file('~/code/models/soundmodel.k')
 
 import nnet
 
@@ -265,7 +278,56 @@ def run():
 
 	return
 
+
+def load_model():
+	pass
+
+def get_seed(seed_len, data_train):
+	nb_examples, seq_len = data_train.shape[0], data_train.shape[1]
+	r = np.random.randint(data_train.shape[0])
+	seed = np.concatenate(tuple([data_train[r+i] for i in range(seed_len)]), axis=0)
+	#1 example by (# of examples) timesteps by (# of timesteps) frequencies
+	inspiration = np.reshape(seed, (1, seed.shape[0], seed.shape[1]))
+	return inspiration
+
+def compose(model, x_data):
+	'''Could add choice of length of composition (roughly)'''
+	print('composing...\n')
+	generation = []
+	muse = get_seed(1, x_data)
+	for ind in range(1):
+		preds = model.predict(muse)
+		print(preds)
+		print(len(preds), len(preds[0]), len(preds[0][0]))
+		generation.extend(preds)
+	return generation
+
+@app.route('/api/task', methods=['POST'])
+def predict_from_upload():
+	block_size = 2700
+	seq_len = 215
+	filepath = request.get_json()['']
+	x_data, y_data = make_tensors(filepath, seq_len, block_size)
+	model = load_model('~/code/models/soundmodel.k')
+	masterpiece = compose(model, x_data)
+	session['my_result'] = masterpiece
+
+
+
+@app.route('/api/tasks', methods=['GET'])
+def get_result():
+	pass
+
 if __name__ == '__main__':
 	#run()
-	x_data, y_data = make_tensors('./ChillingMusic.wav', 215, 2700)
-	build_model(x_data, y_data)
+	#m = make_brain()
+	#optimizer = RMSprop(lr=0.01)
+	#m.compile(loss='mse', optimizer='rmsprop')
+	print('l')
+	model = tf.keras.models.load_model('soundmodel.k')
+	#model = load_model('soundmodel.k')
+	print(model)
+
+
+	#x_data, y_data = make_tensors('./ChillingMusic.wav', 215, 2700)
+	#build_model(x_data, y_data)

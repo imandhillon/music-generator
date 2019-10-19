@@ -45,18 +45,15 @@ export default {
   computed: {
     isDisabled() {
       const fileUploaded = this.canGen
-<<<<<<< HEAD
-=======
+
       console.log('comp')
 
->>>>>>> 58f362058f58fe0d5463028349f7014afb6a782f
 
       return fileUploaded
     }
   },
 
   data: () => ({
-    //
     file: "",
     msg: "",
     error: false,
