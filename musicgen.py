@@ -302,19 +302,52 @@ def compose(model, x_data):
 		generation.extend(preds)
 	return generation
 
-@app.route('/api/task', methods=['POST'])
+@app.route('/api/getaudio', methods=['POST'])
 def predict_from_upload():
 	block_size = 2700
 	seq_len = 215
-	filepath = request.get_json()['']
+	filepath = os.join('./upload', request.get_json()['filename']) # path where the file holding seed is located (./uploads/filename)
+	# would os.join() work here? not sure if its different bc browser or something
 	x_data, y_data = make_tensors(filepath, seq_len, block_size)
-	model = load_model('~/code/models/soundmodel.k')
-	masterpiece = compose(model, x_data)
-	session['my_result'] = masterpiece
+
+	#model = tf.keras.models.load_model('~/code/models/soundmodel.k') this line breaks my laptop but
+	#return dummy for the moment
+
+
+	# how to use flask w vue
+	# like how do I call this function from the button in my simpleupload.vue
+	# and create a file from here (audio) to be played back in browser
+
+	# secondary - id like to add a file drop zone for my front end to look good lol
+
+	# ok, npm install axios. yea i wasnt sure if wanted user to be able to download the output. idk if thats easy to do
+	#
+	
+	# 1st prob => You have to use axios(library) to make post request from vue to <url>/api/getaudio 
+	# to upload and process the uploaded file
+
+	# yes, but there's another library vue-axios which you should not use
+	# Regular axios works like a charm
+
+	# for streaming the audio back to browser, are you okay with creating the audio file in a temp folder available 
+	# to user?
+	# putting the file in temp dir and send the url as response back to vue is easy
+	# Other methods include using websocket to live stream the audio to vue as process generates it(may buffer if 
+	# server gets slow due to heavy users)
+	# Second method is using webrtc, doing it in temp file takes away the pain :D
+	# okay!
+	# regarding the drop zone, there are articles on vue to create that 
+	# you can refer to one of them. Okay, I will start setting up the environment.
+	# Need to do a test run on my system before I start working on it :)
+	
+
+	
+	#masterpiece = compose(model, x_data)
+	session['my_result'] = masterpiece # so i need to make a temp file to hold masterpiece to be played back
 
 
 
-@app.route('/api/tasks', methods=['GET'])
+@app.route('/api/not sure if neededyetlol', methods=['GET'])
 def get_result():
 	pass
 

@@ -125,9 +125,11 @@ export default {
             const allowedTypes = ['audio/wav', 'text/plain']
             const MAX_SIZE = 200000000
             const tooLarge = false//file.size > MAX_SIZE
+            const filename = ""
 
             if(allowedTypes.includes(file.type) && !tooLarge) {
                 this.file = file
+                this.filename = this.file.name //print and check
                 this.error = false
                 this.msg = ""
                 this.canGen = true
@@ -157,6 +159,7 @@ export default {
             this.count = 1
             if (this.canGen){
                 console.log(this.canGen)
+                axios.post('/api/getaudio', {'filename': this.filename})
             }
             if (!this.canGen){
                 console.log(this.canGen)
