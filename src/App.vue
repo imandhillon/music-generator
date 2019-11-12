@@ -42,6 +42,10 @@ export default {
     SimpleUpload
   },
 
+  methods: {
+
+  },
+  
   computed: {
     isDisabled() {
       const fileUploaded = this.canGen

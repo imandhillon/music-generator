@@ -4,7 +4,7 @@ from random import randint
 import os
 import numpy as np
 import tensorflow as tf
-from tensorflow.contrib import rnn
+#from tensorflow.contrib import rnn
 import scipy.io.wavfile as wav
 import wave
 import pyaudio
@@ -20,18 +20,20 @@ from keras.models import Sequential
 from keras.optimizers import RMSprop
 from keras.models import load_model
 
-import torch
-import torch.nn as nn
-import torch.nn.functional as F
-import torch.optim as optim
+# torch code to be removed
+# import torch
+# import torch.nn as nn
+# import torch.nn.functional as F
+# import torch.optim as optim
 
-torch.manual_seed(1)
+# torch.manual_seed(1)
 
-from flask import Flask, jsonify, request
+from flask import Flask, jsonify, request, flash, redirect, url_for
 from flask_cors import CORS
-from flair.models import TextClassifier
-from flair.data import Sentence
-from flask import session
+#from flair.models import TextClassifier
+#from flair.data import Sentence
+from flask import session, send_from_directory, make_response
+from werkzeug.utils import secure_filename
 
 app = Flask(__name__)
 app.secret_key = "super_secret_key"
@@ -39,7 +41,7 @@ app.secret_key = "super_secret_key"
 CORS(app)
 #gen_model = GenModel.load_from_file('~/code/models/soundmodel.k')
 
-import nnet
+#import nnet
 
 
 def pad(array, reference, offsets):
@@ -302,11 +304,54 @@ def compose(model, x_data):
 		generation.extend(preds)
 	return generation
 
+
+
+
+
+
+
+
+
+
+
+@app.route('/')
+def hello_world():
+    resp = make_response('Hello, World!');
+    resp.set_cookie('same-site-cookie', 'foo', samesite='Lax');
+    resp.set_cookie('cross-site-cookie', 'bar', samesite='Lax', secure=True);
+    return resp
+
+def allowed_file(filename):
+    return '.' in filename and \
+           filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
+
 @app.route('/api/getaudio', methods=['POST'])
 def predict_from_upload():
+	print('oy')
 	block_size = 2700
 	seq_len = 215
-	filepath = os.join('./upload', request.get_json()['filename']) # path where the file holding seed is located (./uploads/filename)
+	UPLOAD_FOLDER = '/uploads'
+	ALLOWED_EXTENSIONS = {'txt', 'pdf', 'png', 'jpg', 'jpeg', 'wav'}
+
+	# check if the post request has the file part
+	if 'file' not in request.files:
+		flash('No file part')
+		return redirect(request.url)
+	file = request.files['file']
+	# if user does not select file, browser also
+	# submit an empty part without filename
+	if file.filename == '':
+		flash('No selected file')
+		return redirect(request.url)
+	if file and allowed_file(file.filename):
+		filename = secure_filename(file.filename)
+		file.save(os.path.join(app.config['UPLOAD_FOLDER'], filename))
+		return redirect(url_for('uploaded_file',
+								filename=filename))
+
+
+
+	filepath = os.join('./uploads', request.get_json()['filename']) # path where the file holding seed is located (./uploads/filename)
 	# would os.join() work here? not sure if its different bc browser or something
 	x_data, y_data = make_tensors(filepath, seq_len, block_size)
 
@@ -345,6 +390,11 @@ def predict_from_upload():
 	#masterpiece = compose(model, x_data)
 	session['my_result'] = masterpiece # so i need to make a temp file to hold masterpiece to be played back
 
+
+@app.route('/uploads/<filename>')
+def uploaded_file(filename):
+    return send_from_directory(app.config['UPLOAD_FOLDER'],
+                               filename)
 
 
 @app.route('/api/not sure if neededyetlol', methods=['GET'])

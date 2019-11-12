@@ -116,7 +116,8 @@ export default {
             uploading: false,
             canGen: false,
             count: 0,
-            isDisabled: true
+            isDisabled: true,
+            filename: ""
         }
     },
     methods: {
@@ -145,7 +146,8 @@ export default {
             const formData = new FormData();
             formData.append('file', this.file)
             try {
-                await axios.post("/upload", formData)
+                console.log()
+                await axios.post("http://127.0.0.1:5000/api/getaudio", formData)
                 this.msg = "File uploaded"
                 this.file = ""
                 this.error = false
