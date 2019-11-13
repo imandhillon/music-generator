@@ -40,6 +40,7 @@ app = Flask(__name__)
 
 CORS(app)
 app.config['UPLOAD_FOLDER'] = 'uploads'
+app.config['MAX_CONTENT_LENGTH'] = 35 * 1024 * 1024
 
 #gen_model = GenModel.load_from_file('~/code/models/soundmodel.k')
 
@@ -324,8 +325,8 @@ ALLOWED_EXTENSIONS = {'txt', 'pdf', 'png', 'jpg', 'jpeg', 'wav'}
 #     return resp
 
 def allowed_file(filename):
-    return '.' in filename and \
-           filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
+	return '.' in filename and \
+		   filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
 
 @app.route('/api/getaudio', methods=['POST'])
 def predict_from_upload():
@@ -348,7 +349,16 @@ def predict_from_upload():
 		filename = secure_filename(file.filename)
 		upl_str = app.config['UPLOAD_FOLDER'] + "\\" + filename
 		file.save(upl_str)
+		print(file, type(file))
+		with app.open_resource(upl_str) as f:
+			contents = f.read()
+
+		print(contents)
+		#with open(upl_str, 'r') as f:
+		x_data, y_data = make_tensors(upl_str, seq_len, block_size)
 		#file.save(os.path.join(app.config['UPLOAD_FOLDER'], filename))
+		
+		
 		return redirect(url_for('uploaded_file',
 								filename=filename))
 
@@ -382,8 +392,8 @@ def predict_from_upload():
 
 @app.route('/uploads/<filename>')
 def uploaded_file(filename):
-    return send_from_directory(app.config['UPLOAD_FOLDER'],
-                               filename)
+	return send_from_directory(app.config['UPLOAD_FOLDER'],
+							   filename)
 
 
 @app.route('/api/not sure if neededyetlol', methods=['GET'])
