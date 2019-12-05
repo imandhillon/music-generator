@@ -3,7 +3,7 @@ from random import randint
 
 import os
 import numpy as np
-#import tensorflow as tf
+import tensorflow as tf
 #from tensorflow.contrib import rnn
 import scipy.io.wavfile as wav
 import wave
@@ -11,6 +11,7 @@ import pyaudio
 import itertools
 from tempfile import TemporaryFile
 from collections import Counter
+import tempfile
 
 from keras import backend as K
 K.clear_session()
@@ -33,10 +34,11 @@ from flask_cors import CORS
 #from flair.models import TextClassifier
 #from flair.data import Sentence
 from flask import session, send_from_directory, make_response
+from flask import send_file, safe_join, abort
 from werkzeug.utils import secure_filename
 
 app = Flask(__name__)
-#app.secret_key = "super_secret_key"
+app.secret_key = "super_secret_key"
 
 CORS(app)
 app.config['UPLOAD_FOLDER'] = 'uploads'
@@ -97,6 +99,18 @@ def np_to_sample(music, block_size=2048):
 	# print(len(blocks),len(blocks[0]), 448*2700)
 
 	return blocks
+
+def write_np_as_wav(X, sample_rate=44100, filename='new.wav'):
+	Xnew = X * 32767.0
+	Xnew = Xnew.astype('int16')
+	wav.write(filename, sample_rate, Xnew)
+	return
+
+def convert_sample_blocks_to_np_audio(blocks):
+	song_np = np.concatenate(blocks)
+	#song_np = [item for sublist in song_np for item in sublist]
+	print(song_np, '\n><><><><><>')
+	return song_np
 
 def serialize_corpus(x_train, y_train, seq_len=215):
 	seqs_x = []
@@ -159,10 +173,10 @@ def make_tensors(file, seq_len=215, block_size=2048, out_file='train'):
 	x_data = np.asarray(x_data)
 	y_data = np.asarray(y_data)
 
-	np.save(out_file+'_mean', mean_x)
-	np.save(out_file+'_var', std_x)
-	np.save(out_file+'_x', x_data)
-	np.save(out_file+'_y', y_data)
+	# np.save(out_file+'_mean', mean_x)
+	# np.save(out_file+'_var', std_x)
+	# np.save(out_file+'_x', x_data)
+	# np.save(out_file+'_y', y_data)
 	print('Done!')
 
 	# for x in range(2):
@@ -328,11 +342,10 @@ def allowed_file(filename):
 	return '.' in filename and \
 		   filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
 
-@app.route('/api/getaudio', methods=['POST'])
+@app.route('/api/sendaudio', methods=['POST'])
 def predict_from_upload():
 	block_size = 2700
 	seq_len = 215
-	
 
 	# check if the post request has the file part
 	if 'file' not in request.files:
@@ -345,11 +358,18 @@ def predict_from_upload():
 		flash('No selected file')
 		return redirect(request.url)
 	if file and allowed_file(file.filename):
-		print(app.config)
 		filename = secure_filename(file.filename)
 		upl_str = app.config['UPLOAD_FOLDER'] + "\\" + filename
 		file.save(upl_str)
 		print(file, type(file))
+
+		# Now send upl_str back as json return. Vue side will now enable gen
+		# pass uplstr into gen to use
+		response = {
+			'uploadPath': upl_str
+		}
+		return jsonify(response)
+
 		with app.open_resource(upl_str) as f:
 			contents = f.read()
 
@@ -390,15 +410,51 @@ def predict_from_upload():
 	session['my_result'] = masterpiece # so i need to make a temp file to hold masterpiece to be played back
 
 
-@app.route('/uploads/<filename>')
-def uploaded_file(filename):
-	return send_from_directory(app.config['UPLOAD_FOLDER'],
-							   filename)
+@app.route('/api/getfile/<audiofile>')
+def send_file(audiofile):
+	try:
+		return send_from_directory(os.getcwd(),filename=audiofile, as_attachment=True)
+	except FileNotFoundError:
+		abort(404)
 
+@app.route('/api/generate', methods=['POST'])
+def generate():
+	block_size = 2700
+	seq_len = 215
+	#print('oy')
+	#print(request.form, request.data, request.args, request.files, request.values, request.json)
+	#print('pppp', request.form.get('filePath'))
+	print(request.form['filePath'])
+	upl_str = request.form['filePath']
+	#with app.open_resource(upl_str) as f:
+	# with open(upl_str) as wf:
+	# 	print(wf)
+	# 	upl_file = wf
+	#contents = f.read() - for txt testing
 
-@app.route('/api/not sure if neededyetlol', methods=['GET'])
-def get_result():
-	pass
+	#with open(upl_str, 'r') as f:
+	x_data, y_data = make_tensors(upl_str, seq_len, block_size)
+	#model = make_brain(seq_len, block_size)
+	#model = train_brain(model, x_data, y_data)
+	model = tf.keras.models.load_model('soundmodel.k')
+	masterpiece = compose(model, x_data)
+	masterpiece = convert_sample_blocks_to_np_audio(masterpiece[0])
+
+	#with tempfile.TemporaryDirectory() as d:
+	print('i am here')
+	masterpiece = write_np_as_wav(masterpiece, sample_rate=44100, filename='new.wav')
+	print('wrote np as wav ez')
+	wpath = os.path.join(os.getcwd(), 'new.wav')
+	print(wpath, open(wpath))
+	response = {
+		'wavPath': wpath
+	}
+	print(wpath)
+	return jsonify(response)
+
+	print('qpp+')
+	return
+
 
 if __name__ == '__main__':
 	#run()

@@ -64,7 +64,7 @@
         <div class="field">
             <button class="button is-info">Send</button>
 
-            <button v-on:click="test" class="button gen">Generate Audio!!</button>
+            <button v-on:click="genAudio" class="button gen">Generate Audio!!</button>
         </div>
 
 
@@ -117,7 +117,7 @@ export default {
             canGen: false,
             count: 0,
             isDisabled: true,
-            filename: ""
+            filepath: ""
         }
     },
     methods: {
@@ -126,14 +126,13 @@ export default {
             const allowedTypes = ['audio/wav', 'text/plain']
             const MAX_SIZE = 200000000
             const tooLarge = false//file.size > MAX_SIZE
-            const filename = ""
+            const filepath = ""
 
             if(allowedTypes.includes(file.type) && !tooLarge) {
-                this.file = file
-                this.filename = this.file.name //print and check
+                this.file = file // this.file.name
+                this.filepath = "" 
                 this.error = false
                 this.msg = ""
-                this.canGen = true
                 console.log(file)
             }
             else {
@@ -146,22 +145,59 @@ export default {
             const formData = new FormData();
             formData.append('file', this.file)
             try {
+                // try to accesss file elem here to trigger error if bad
                 console.log()
-                await axios.post("http://127.0.0.1:5000/api/getaudio", formData)
-                this.msg = "File uploaded"
-                this.file = ""
-                this.error = false
+                await axios.post("http://127.0.0.1:5000/api/sendaudio", formData)
+                .then(response => {
+                    this.filepath = response.data.uploadPath
+                    console.log(this.filepath)
+                    this.canGen = true
+
+                    this.msg = "File uploaded"
+                    this.file = ""
+                    this.error = false
+                })
+                .catch(error => {
+                    console.log(error)
+                })
+                
             }
             catch(err) {
                 this.msg = err.response.data.error
                 this.error = true
             }
         },
-        test() {
-            this.count = 1
+        playFile() {
+            console.log('hi')
+            var audio = new Audio('http://127.0.0.1:5000/api/getfile/new.wav'); // response.file or smth
+            audio.play();
+
+            // axios.get('http://127.0.0.1:5000/api/getfile/new.wav', {
+            //     responseType: 'blob',
+            // })
+            // .then(response => {
+            //     console.log(response)
+            //     var audio = new Audio(response.data); // response.file or smth
+            //     audio.play();
+            // })
+        },
+        genAudio() {
             if (this.canGen){
-                console.log(this.canGen)
-                axios.post('/api/getaudio', {'filename': this.filename})
+                console.log(this.filepath, '111')
+                const formData = new FormData();
+                formData.append('filePath', this.filepath)
+                axios.post('http://127.0.0.1:5000/api/generate', formData)
+                .then(response => {
+                    //call playfile
+                    this.playFile();
+                    var musicPath = ""
+                    var musicTemp = response.data.wavPath
+                    var musicTemp = musicPath.concat("file://", musicTemp);
+                    console.log(musicTemp)
+
+                    // var audio = new Audio(musicTemp); // path to file
+                    // audio.play();
+                })
             }
             if (!this.canGen){
                 console.log(this.canGen)
