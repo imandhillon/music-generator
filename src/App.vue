@@ -21,13 +21,22 @@
     </v-content>
 
   </v-app> -->
-  <div class="section">
+
+  <div id="app">
+    <v-app>
+      <v-content>
+        <simple-upload />
+      </v-content>
+    </v-app>
+  </div>
+
+  <!-- <div class="section">
     <div class="container">
 
       <simple-upload />
 
     </div>
-  </div>
+  </div> -->
 </template>
 
 <script>
@@ -39,7 +48,7 @@ export default {
   name: 'App',
   components: {
     HelloWorld,
-    SimpleUpload
+    SimpleUpload,
   },
 
   methods: {

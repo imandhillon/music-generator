@@ -1,15 +1,38 @@
 <template>
     <form @submit.prevent="sendFile" enctype="multipart/form-data">
 
+    <!-- <header>
+        <h1>Music Generator</h1>
+        <h2>Input a .wav file that is similar to what you want to hear<br><br></h2>
+    </header> -->
+
+    <nav class="navbar navbar-inverse navbar-fixed-top">
+    <div class="container-fluid">
+        <div class="navbar-header">
+        <a class="navbar-brand" href="#">BangBang</a>
+        </div>
+        <ul class="nav navbar-nav">
+        <li class="active"><a href="imandhillon.com">imandhillon.com</a></li>
+        <!-- <li><a href="#">Page 1</a></li>
+        <li><a href="#">Page 2</a></li>
+        <li><a href="#">Page 3</a></li> -->
+        </ul>
+    </div>
+    </nav>
+
+    <div class="mainimgbox">
+    <img class="mainimg" src="./musicwavescrop2.jpg" width="2000" height="30">
+    </div>
+
     <div v-if="msg"
         :class="`msg ${error ? 'is-danger' : 'is-success'}`" >
         <div class="msg-body">{{msg}}
         </div>
     </div>
 
-        <div class="field">
+        <!-- <div class="field">
 
-            <div class="file is boxed is-primary">
+            <div class="file is boxed is-primary" disabled>
                 <label class="file-label">
 
                     <input type="file"
@@ -17,7 +40,7 @@
                         @change="selectFile"
                         class="file-input"
                     />
-                    <!-- <v-btn depressed @click="refs.fileInput.click()">Choose a wav File</v-btn> -->
+                    <v-btn depressed @click="refs.fileInput.click()">Choose a wav File</v-btn> +
                     
                     <span class ="file-cta">
                         <span class="file-icon">
@@ -32,7 +55,32 @@
                 </label>
                 
             </div>
+        </div> -->
+        <div class="gen">
+            <button class="button is-info">Send and Generate Audio</button>
+
+            <!-- <button v-on:click="genAudio" class="button gen">Generate Audio!!</button> -->
         </div>
+
+        <div id="dropzone">
+            <vue-dropzone id="drop1" :options="dropOptions" ref="myVueDropzone"></vue-dropzone>
+        </div>
+
+        <div id="audiovis">
+            <canvas id='canvas' width="800" height="350"></canvas>
+            <br>
+            <br>
+            <audio crossOrigin="anonymous"
+                src = "http://127.0.0.1:5000/api/getfile/new.wav" 
+                id = "audio" controls>
+                audio element not supported
+            </audio>
+        </div>
+
+
+        <!-- <av-bars
+            audio-src="http://127.0.0.1:5000/api/getfile/new.wav">
+        </av-bars> -->
             <!-- <div class="dropzone">
                     <input 
                         type="file"
@@ -61,38 +109,6 @@
             {{file.name}} 
         </span>
 
-        <div class="field">
-            <button class="button is-info">Send</button>
-
-            <button v-on:click="genAudio" class="button gen">Generate Audio!!</button>
-        </div>
-
-
-
-
-            <!-- <div class="dropzone">
-                    <input 
-                        type="file"
-                        ref="file"
-                        @change="selectFile" 
-                        class="input-file"
-                    />
-
-                <p v-if="!uploading" class="call-to-action">
-                    Drag your file here
-                </p>
-                <p v-if="uploading" class="progress-bar">
-
-                </p>
-
-            
-             <label for="file" class="label">Upload File</label>
-            <input type="file"
-                ref="file"
-                @change="selectFile"
-            /> 
-
-        </div> comment?-->
 
 
         
@@ -105,7 +121,13 @@
 
 <script>
 /* eslint-disable */
-import axios from 'axios'
+import axios from 'axios';
+import vueDropzone from "vue2-dropzone";
+import { BootstrapVue, IconsPlugin } from 'bootstrap-vue';
+import AudioVisual from 'vue-audio-visual';
+import Vue from 'vue'
+Vue.use(AudioVisual)
+
 export default {
     name: "SimpleUpload",
     data() {
@@ -117,8 +139,25 @@ export default {
             canGen: false,
             count: 0,
             isDisabled: true,
-            filepath: ""
+            filepath: "",
+            firstGen: "1",
+            dzDisabled: false,
+            dropOptions: {
+                url: "http://127.0.0.1:5000/api/sendaudio",
+                acceptedFiles: 'audio/wav,text/plain',
+                maxFilesize: 200,
+                autoProcessQueue: false,
+                // accept: function(file, done) {
+                    
+                // },
+                // init: function() {
+                //     this.on("addedfile", function(file) {document.getElementById("drop1").disabled; })
+                // }
+            }
         }
+    },
+    components: {
+        vueDropzone
     },
     methods: {
         selectFile() {
@@ -133,7 +172,10 @@ export default {
                 this.filepath = "" 
                 this.error = false
                 this.msg = ""
-                console.log(file)
+                this.dzDisabled = true
+                this.$refs.myVueDropzone.disable()
+                console.log(file, this.dzDisabled)
+                
             }
             else {
                 this.error = true
@@ -143,19 +185,29 @@ export default {
         },
         async sendFile() {
             const formData = new FormData();
+            this.file = this.$refs.myVueDropzone.getAcceptedFiles()[0]
             formData.append('file', this.file)
             try {
-                // try to accesss file elem here to trigger error if bad
-                console.log()
+                // if we click send without having selected a file, 
+                //console.log()
+                // console.log(this.$refs.myVueDropzone.getAcceptedFiles())
+                // console.log(this.$refs.myVueDropzone.processQueue())
+
+                console.log(this.$refs.myVueDropzone.getAcceptedFiles())
+                
+
                 await axios.post("http://127.0.0.1:5000/api/sendaudio", formData)
                 .then(response => {
                     this.filepath = response.data.uploadPath
-                    console.log(this.filepath)
+                    console.log(this.filepath, 'uploaded file')
                     this.canGen = true
 
                     this.msg = "File uploaded"
                     this.file = ""
                     this.error = false
+                    console.log('calling test in send')
+                    // this.test()
+                    this.genAudio()
                 })
                 .catch(error => {
                     console.log(error)
@@ -167,52 +219,134 @@ export default {
                 this.error = true
             }
         },
+        test() {
+            console.log('test')
+            var audio = new Audio('http://127.0.0.1:5000/api/test');
+            this.showVisualizer();
+        },
         playFile() {
-            console.log('hi')
-            var audio = new Audio('http://127.0.0.1:5000/api/getfile/new.wav'); // response.file or smth
-            audio.play();
-
-            // axios.get('http://127.0.0.1:5000/api/getfile/new.wav', {
-            //     responseType: 'blob',
-            // })
-            // .then(response => {
-            //     console.log(response)
-            //     var audio = new Audio(response.data); // response.file or smth
-            //     audio.play();
-            // })
+            console.log('Playing audio')
+            var audio = new Audio('http://127.0.0.1:5000/api/getfile/new.wav');
+            this.showVisualizer()
+            // audio.play();
         },
         genAudio() {
             if (this.canGen){
-                console.log(this.filepath, '111')
+                console.log(this.filepath, 'filepath')
                 const formData = new FormData();
                 formData.append('filePath', this.filepath)
+                formData.append('firstGen', this.firstGen)
                 axios.post('http://127.0.0.1:5000/api/generate', formData)
                 .then(response => {
                     //call playfile
-                    this.playFile();
-                    var musicPath = ""
-                    var musicTemp = response.data.wavPath
-                    var musicTemp = musicPath.concat("file://", musicTemp);
-                    console.log(musicTemp)
-
-                    // var audio = new Audio(musicTemp); // path to file
-                    // audio.play();
+                    this.firstGen = "2"
+                    this.showVisualizer();
                 })
             }
             if (!this.canGen){
                 console.log(this.canGen)
             }
-        }
-    }
+        },
+        dzFileAdd() {
+            // files = document.getElementById("drop1").getAcceptedFiles()
+            // console.log(files)
+        },
+        showVisualizer() {
+            console.log('visual');
+            var audio = document.getElementById('audio');
+            var ctx = new AudioContext();
+            var analyser = ctx.createAnalyser();
+            var audioSrc = ctx.createMediaElementSource(audio);
+            // we have to connect the MediaElementSource with the analyser 
+            audioSrc.connect(analyser);
+            analyser.connect(ctx.destination);
+            // we could configure the analyser: e.g. analyser.fftSize (for further infos read the spec)
+            // analyser.fftSize = 64;
+            // frequencyBinCount tells you how many values you'll receive from the analyser
+            var frequencyData = new Uint8Array(analyser.frequencyBinCount);
+
+            // we're ready to receive some data!
+            var canvas = document.getElementById('canvas'),
+                cwidth = canvas.width,
+                cheight = canvas.height - 2,
+                meterWidth = 10, //width of the meters in the spectrum
+                gap = 2, //gap between meters
+                capHeight = 2,
+                capStyle = '#39FF14',
+                meterNum = 800 / (10 + 2), //count of the meters
+                capYPositionArray = []; ////store the vertical position of hte caps for the preivous frame
+            ctx = canvas.getContext('2d'),
+            console.log(ctx);
+            // gradient = ctx.createLinearGradient(0, 0, 0, 300);
+            // gradient.addColorStop(1, '#0f0');
+            // gradient.addColorStop(0.5, '#ff0');
+            // gradient.addColorStop(0, '#f00');
+            // loop
+            function renderFrame() {
+                var array = new Uint8Array(analyser.frequencyBinCount);
+                analyser.getByteFrequencyData(array);
+                var step = Math.round(array.length / meterNum); //sample limited data from the total array
+                ctx.clearRect(0, 0, cwidth, cheight);
+                for (var i = 0; i < meterNum; i++) {
+                    var value = array[i * step];
+                    if (capYPositionArray.length < Math.round(meterNum)) {
+                        capYPositionArray.push(value);
+                    };
+                    ctx.fillStyle = capStyle;
+                    //draw the cap, with transition effect
+                    if (value < capYPositionArray[i]) {
+                        ctx.fillRect(i * 12, cheight - (--capYPositionArray[i]), meterWidth, capHeight);
+                    } else {
+                        ctx.fillRect(i * 12, cheight - value, meterWidth, capHeight);
+                        capYPositionArray[i] = value;
+                    };
+                    // ctx.fillStyle = gradient; //set the fillStyle to gradient for a better look
+                    ctx.fillRect(i * 12 /*meterWidth+gap*/ , cheight - value + capHeight, meterWidth, cheight); //the meter
+                }
+                requestAnimationFrame(renderFrame);
+            }
+            renderFrame();
+            audio.play();
+        },
+        // initWebAudioApi () {
+        //     // create a new audio context
+        //     this.context = new (AudioContext || webkitAudioContext)();
+        //     // bind the context to our <audio /> element
+        //     this.source = this.context.createMediaElementSource(this.audio.base);
+        // }
+    },
+    computed: {
+        disableDropzone() {
+            // if (dzDisabled) {
+            //     document.getElementById("drop1").disabled = true;
+            // } else {
+            //     document.getElementById("drop1").disabled = false;
+            // }
+        },
+
+        disableChooseButton () {
+
+        },
+
+        disableGenerate () {
+
+        },
+    },
+    // mounted() {
+    //     this.initWebAudioApi();
+    // },
+    
 }
 </script>
 
 
 <style scoped>
     .dropzone {
-        min-height: 200px;
+        min-height: 150px;
+        width: 80%;
         padding: 10px 10px;
         position: relative;
+        margin: auto;
         cursor: pointer;
         outline: 2px dashed grey;
         outline-offset: -10px;
@@ -229,7 +363,38 @@ export default {
     }
 
     .dropzone.hover {
-        color: lightblue;
+        color: rgb(21, 161, 207);
     }
+    .gen{
+        margin: auto;
+        text-align: center;
+        padding: 15px;
+    }
+    /* img.mainimg {
+        height: 10%;
+        width: 80%;
+    } */
+
+    body {
+    background: #000;
+    text-align: center;
+    color: rgb(23, 168, 125);
+    }
+    a{
+        color:yellow;
+    }
+    .bar-wrapper {
+        height: 300px;
+        position: relative;
+    }
+    .bar {
+        position: relative;
+        bottom: 0;
+        width: 5px;
+        display: inline-block;
+        border: 1px solid red;
+        height: 5px;
+        border-bottom: 3px solid rgb(255, 17, 17);
+}
 
 </style>

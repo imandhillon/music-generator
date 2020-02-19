@@ -9,8 +9,15 @@
   },
   "dependencies": {
     "axios": "^0.19.0",
+    "bootstrap": "^4.4.1",
+    "bootstrap-vue": "^2.4.0",
     "core-js": "^2.6.5",
-    "vue": "^2.6.10",
+    "jquery": "^3.4.1",
+    "mdbvue": "^6.4.0",
+    "popper.js": "^1.16.1",
+    "vue": "^2.6.11",
+    "vue-audio-visual": "^1.4.1",
+    "vue2-dropzone": "^3.6.0",
     "vuetify": "^2.0.0"
   },
   "devDependencies": {
