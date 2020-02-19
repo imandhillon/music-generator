@@ -219,11 +219,11 @@ export default {
                 this.error = true
             }
         },
-        test() {
-            console.log('test')
-            var audio = new Audio('http://127.0.0.1:5000/api/test');
-            this.showVisualizer();
-        },
+        // test() {
+        //     console.log('test')
+        //     var audio = new Audio('http://127.0.0.1:5000/api/test');
+        //     this.showVisualizer();
+        // },
         playFile() {
             console.log('Playing audio')
             var audio = new Audio('http://127.0.0.1:5000/api/getfile/new.wav');

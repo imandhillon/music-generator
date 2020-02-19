@@ -11,7 +11,7 @@ import 'bootstrap-vue/dist/bootstrap-vue.css'
 // import { BootstrapVue, IconsPlugin } from 'bootstrap-vue'
 
 Vue.config.productionTip = false
-Vue.use(AudioVisual)
+// Vue.use(AudioVisual)
 
 new Vue({
   vuetify,
