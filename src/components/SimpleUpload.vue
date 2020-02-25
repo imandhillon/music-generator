@@ -9,7 +9,7 @@
     <nav class="navbar navbar-inverse navbar-fixed-top">
     <div class="container-fluid">
         <div class="navbar-header">
-        <a class="navbar-brand" href="#">BangBang</a>
+        <a class="navbar-brand" href="#">AudioGen</a>
         </div>
         <ul class="nav navbar-nav">
         <li class="active"><a href="imandhillon.com">imandhillon.com</a></li>
@@ -22,6 +22,10 @@
 
     <div class="mainimgbox">
     <img class="mainimg" src="./musicwavescrop2.jpg" width="2000" height="30">
+    </div>
+
+    <div id='instructions'>
+        <br>Click or drag a .wav file onto the dropzone that sounds similar to the sound you want.<br> Then click the Generate Audio button and enjoy!
     </div>
 
     <div v-if="msg"
@@ -64,23 +68,41 @@
 
         <div id="dropzone">
             <vue-dropzone id="drop1" :options="dropOptions" ref="myVueDropzone"></vue-dropzone>
+            
         </div>
+        <div class="dz-av">
 
         <div id="audiovis">
-            <canvas id='canvas' width="800" height="350"></canvas>
+            <div v-if="loading"
+                class="loadspin">
+                <img class="spinner" src="./Wedges-3s-207px-trans.gif" width="80" height="80">
+            </div>
+            <canvas id='canvas' width="800" height="150"></canvas>
             <br>
             <br>
             <audio crossOrigin="anonymous"
-                src = "http://127.0.0.1:5000/api/getfile/new.wav" 
+                :src = "showVisualizer"
                 id = "audio" controls>
                 audio element not supported
+                <!-- "http://127.0.0.1:5000/api/getfile/new.wav"  -->
             </audio>
+        </div>
         </div>
 
 
         <!-- <av-bars
             audio-src="http://127.0.0.1:5000/api/getfile/new.wav">
         </av-bars> -->
+        <!-- <av-bars
+        :canv-top="true"
+        :canv-width="600"
+        :canv-height="120"
+      caps-color="#FFF"
+      :bar-color="['#f00', '#ff0', '#0f0']"
+      canv-fill-color="#000"
+      :caps-height="2"
+      audio-src="http://127.0.0.1:5000/api/getfile/new.wav"
+    ></av-bars> -->
             <!-- <div class="dropzone">
                     <input 
                         type="file"
@@ -125,8 +147,9 @@ import axios from 'axios';
 import vueDropzone from "vue2-dropzone";
 import { BootstrapVue, IconsPlugin } from 'bootstrap-vue';
 import AudioVisual from 'vue-audio-visual';
-import Vue from 'vue'
-Vue.use(AudioVisual)
+// import VueAudio from 'vue-audio'
+// import Vue from 'vue'
+// Vue.use(AudioVisual)
 
 export default {
     name: "SimpleUpload",
@@ -138,6 +161,7 @@ export default {
             uploading: false,
             canGen: false,
             count: 0,
+            loading: false,
             isDisabled: true,
             filepath: "",
             firstGen: "1",
@@ -157,7 +181,8 @@ export default {
         }
     },
     components: {
-        vueDropzone
+        vueDropzone,
+        // 'vue-audio': VueAudio,
     },
     methods: {
         selectFile() {
@@ -194,6 +219,7 @@ export default {
                 // console.log(this.$refs.myVueDropzone.processQueue())
 
                 console.log(this.$refs.myVueDropzone.getAcceptedFiles())
+                this.loading = true;
                 
 
                 await axios.post("http://127.0.0.1:5000/api/sendaudio", formData)
@@ -205,11 +231,12 @@ export default {
                     this.msg = "File uploaded"
                     this.file = ""
                     this.error = false
-                    console.log('calling test in send')
+                    console.log('in send')
                     // this.test()
                     this.genAudio()
                 })
                 .catch(error => {
+                    this.msg = "File failed to upload"
                     console.log(error)
                 })
                 
@@ -252,8 +279,12 @@ export default {
             // console.log(files)
         },
         showVisualizer() {
+            // Credit to Cornelius Gee for the Visualizer code. https://codepen.io/cgyc8866/pen/wGRqLw
             console.log('visual');
+            document.getElementById("audiovis").style.left = "100px";
+            document.getElementById("audiovis").style.top  = "15px";
             var audio = document.getElementById('audio');
+            audio.src = "http://127.0.0.1:5000/api/getfile/new.wav";
             var ctx = new AudioContext();
             var analyser = ctx.createAnalyser();
             var audioSrc = ctx.createMediaElementSource(audio);
@@ -306,6 +337,7 @@ export default {
                 requestAnimationFrame(renderFrame);
             }
             renderFrame();
+            this.loading = false;
             audio.play();
         },
         // initWebAudioApi () {
@@ -341,17 +373,62 @@ export default {
 
 
 <style scoped>
+    form {
+        background-color: rgb(230, 230, 230);
+        text-align: center;
+    }
+    .dz-av{
+        display: flex;
+        justify-content: center;
+        width: 100%;
+        height: 250px;
+        /* position: relative; */
+    }
     .dropzone {
         min-height: 150px;
         width: 80%;
         padding: 10px 10px;
+        /* justify-content: center; */
         position: relative;
+        
         margin: auto;
         cursor: pointer;
-        outline: 2px dashed grey;
+        outline: 2px dashed rgb(109, 109, 109);
         outline-offset: -10px;
-        background: lightcyan;
+        background: rgb(176, 255, 255);
         color: dimgray;
+    }
+    .loadspin {
+        display: flex;
+        position: absolute;
+        margin-left: auto;
+        margin-right: auto;
+        left: 0;
+        right: 0; 
+        justify-content: center;
+    }
+    .audiovis {
+        z-index: 1;
+        position: relative;
+        justify-content: flex-start;
+        
+        /* margin: 80px; */
+        
+        /* border: 4px solid goldenrod; */
+    }
+    .audio {
+        justify-content: center;
+        /* width: 80%; */
+        /* margin: auto; */
+        /* left: 40%; */
+    }
+    .canvas {
+        position: absolute;
+        justify-content: center;
+        /* width: 80%; */
+        /* margin: 0px 100px; */
+        /* left: 40%; */
+        z-index: 1;
     }
 
     .input-file {
@@ -375,11 +452,11 @@ export default {
         width: 80%;
     } */
 
-    body {
+    /* body {
     background: #000;
     text-align: center;
     color: rgb(23, 168, 125);
-    }
+    } */
     a{
         color:yellow;
     }
@@ -395,6 +472,9 @@ export default {
         border: 1px solid red;
         height: 5px;
         border-bottom: 3px solid rgb(255, 17, 17);
-}
+    }
+    .instructions {
+        display: inline-block;
+    }
 
 </style>
