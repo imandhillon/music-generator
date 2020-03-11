@@ -165,10 +165,16 @@ export default {
             isDisabled: true,
             filepath: "",
             firstGen: "1",
+
+            // audio: document.getElementById('audio'),
+            // ctx: new AudioContext(),
+            // analyser: this.ctx.createAnalyser(),
+            // audioSrc: this.ctx.createMediaElementSource(audio),
+
             dzDisabled: false,
             dropOptions: {
                 url: "http://127.0.0.1:5000/api/sendaudio",
-                acceptedFiles: 'audio/wav,text/plain',
+                acceptedFiles: 'audio/wav',
                 maxFilesize: 200,
                 autoProcessQueue: false,
                 // accept: function(file, done) {
@@ -187,7 +193,7 @@ export default {
     methods: {
         selectFile() {
             const file = this.$refs.file.files[0]
-            const allowedTypes = ['audio/wav', 'text/plain']
+            const allowedTypes = ['audio/wav']
             const MAX_SIZE = 200000000
             const tooLarge = false//file.size > MAX_SIZE
             const filepath = ""
@@ -198,7 +204,7 @@ export default {
                 this.error = false
                 this.msg = ""
                 this.dzDisabled = true
-                this.$refs.myVueDropzone.disable()
+                this.$refs.myVueDropzone.disableDropzone()
                 console.log(file, this.dzDisabled)
                 
             }
@@ -226,6 +232,8 @@ export default {
                 .then(response => {
                     this.filepath = response.data.uploadPath
                     console.log(this.filepath, 'uploaded file')
+                    this.$refs.myVueDropzone.removeAllFiles()
+                    this.$refs.myVueDropzone.disable()
                     this.canGen = true
 
                     this.msg = "File uploaded"
@@ -281,16 +289,25 @@ export default {
         showVisualizer() {
             // Credit to Cornelius Gee for the Visualizer code. https://codepen.io/cgyc8866/pen/wGRqLw
             console.log('visual');
-            document.getElementById("audiovis").style.left = "100px";
-            document.getElementById("audiovis").style.top  = "15px";
+            // document.getElementById("audiovis").style.left = "100px";
+            // document.getElementById("audiovis").style.top  = "15px";
+            
             var audio = document.getElementById('audio');
-            audio.src = "http://127.0.0.1:5000/api/getfile/new.wav";
+            console.log('var audioo');
             var ctx = new AudioContext();
+            console.log('new ctx');
+            audio.src = "http://127.0.0.1:5000/api/getfile/new.wav";
+            console.log('src');
             var analyser = ctx.createAnalyser();
+            console.log('made analyzer');
             var audioSrc = ctx.createMediaElementSource(audio);
+            console.log('mediaelemsrc');
+            
             // we have to connect the MediaElementSource with the analyser 
-            audioSrc.connect(analyser);
+            audioSrc.connect(analyser); //breaks here on 2nd run 
+            console.log('con audsrc');
             analyser.connect(ctx.destination);
+            console.log('con analyze');
             // we could configure the analyser: e.g. analyser.fftSize (for further infos read the spec)
             // analyser.fftSize = 64;
             // frequencyBinCount tells you how many values you'll receive from the analyser
@@ -337,9 +354,23 @@ export default {
                 requestAnimationFrame(renderFrame);
             }
             renderFrame();
+
             this.loading = false;
             audio.play();
+            this.reset(audioSrc, analyser, ctx, audio);
         },
+        reset(audioSrc, analyser, ctx, audio) {
+            console.log('resetting')
+            this.$refs.myVueDropzone.enable()
+            this.filepath = ""
+            this.file = ""
+            this.canGen = false
+            console.log(this.file, this.filepath)
+            audioSrc.disconnect();//analyser);
+            analyser.disconnect();//ctx.destination);
+            audio.src = "";
+            ctx.close();
+        }
         // initWebAudioApi () {
         //     // create a new audio context
         //     this.context = new (AudioContext || webkitAudioContext)();
@@ -370,6 +401,8 @@ export default {
     
 }
 </script>
+
+
 
 
 <style scoped>

@@ -36,12 +36,19 @@ from flask import session, send_from_directory, make_response
 from flask import send_file, safe_join, abort
 from werkzeug.utils import secure_filename
 
+import lstmnet
+from lstmnet import Singleton
+
 app = Flask(__name__)
 app.secret_key = "super_secret_key"
 
 CORS(app)
 app.config['UPLOAD_FOLDER'] = 'uploads'
 app.config['MAX_CONTENT_LENGTH'] = 35 * 1024 * 1024
+
+graph = tf.get_default_graph()
+model = Singleton().get_model()
+print(model)
 
 
 def pad(array, reference, offsets):
@@ -186,148 +193,143 @@ def make_tensors(file, seq_len=215, block_size=2048, out_file='train'):
 	# np.save(out_file+'_y', y_data)
 	print('Done!')
 
-	# for x in range(2):
-	# 	print(x_data[x], '\n')
-	# for x in range(2):
-	# 	print(y_data[x], '\n')
-
 	print('mean/std shape: ', mean_x.shape, '\n', std_x.shape)
 	return x_data, y_data
 
-def pytorch_buildmodel(x_data, y_data, nb_epochs=1, seq_len=215, block_size=2048):
-	#input_shape = (seq_len, block_size)
-	learning_rate=0.01
-	num_epochs = 1
-	batch_size = 2
-	#lstm = torch.nn.LSTM(input_size=block_size, hidden_size=block_size)
-	print(x_data.shape,'xshape')
-	print(y_data.shape, 'yshape')
+# def pytorch_buildmodel(x_data, y_data, nb_epochs=1, seq_len=215, block_size=2048):
+# 	#input_shape = (seq_len, block_size)
+# 	learning_rate=0.01
+# 	num_epochs = 1
+# 	batch_size = 2
+# 	#lstm = torch.nn.LSTM(input_size=block_size, hidden_size=block_size)
+# 	print(x_data.shape,'xshape')
+# 	print(y_data.shape, 'yshape')
 	
-	x_data = np.swapaxes(x_data, 1, 0)
-	y_data = np.swapaxes(y_data, 1,0)
+# 	x_data = np.swapaxes(x_data, 1, 0)
+# 	y_data = np.swapaxes(y_data, 1,0)
 
-	print(x_data.shape, type(x_data),'\nxdata\n')
+# 	print(x_data.shape, type(x_data),'\nxdata\n')
 
-	dims = x_data.shape
-	#exit()
-	mylstm = nnet.LSTM(dims[2], 32, batch_size)
+# 	dims = x_data.shape
+# 	#exit()
+# 	mylstm = nnet.LSTM(dims[2], 32, batch_size)
 
-	loss_fn = torch.nn.MSELoss(size_average=False)
-	optimiser = torch.optim.Adam(mylstm.parameters(), lr=learning_rate)
+# 	loss_fn = torch.nn.MSELoss(size_average=False)
+# 	optimiser = torch.optim.Adam(mylstm.parameters(), lr=learning_rate)
 
-	#####################
-	# Train model
-	#####################
+# 	#####################
+# 	# Train model
+# 	#####################
 
-	hist = np.zeros(num_epochs)
-	x_data = torch.tensor(x_data)
-	y_data = torch.tensor(y_data)
+# 	hist = np.zeros(num_epochs)
+# 	x_data = torch.tensor(x_data)
+# 	y_data = torch.tensor(y_data)
 
-	for t in range(num_epochs):
-		# Clear stored gradient
-		mylstm.zero_grad()
+# 	for t in range(num_epochs):
+# 		# Clear stored gradient
+# 		mylstm.zero_grad()
 		
-		# Initialise hidden state
-		# Don't do this if you want your LSTM to be stateful
-		mylstm.hidden = mylstm.init_hidden()
+# 		# Initialise hidden state
+# 		# Don't do this if you want your LSTM to be stateful
+# 		mylstm.hidden = mylstm.init_hidden()
 		
-		# Forward pass
-		y_pred = mylstm(x_data)
-		print(type(y_pred), type(y_data))
-		exit()
-		loss = loss_fn(y_pred, y_data)
-		if t % 100 == 0:
-			print("Epoch ", t, "MSE: ", loss.item())
-		hist[t] = loss.item()
+# 		# Forward pass
+# 		y_pred = mylstm(x_data)
+# 		print(type(y_pred), type(y_data))
+# 		exit()
+# 		loss = loss_fn(y_pred, y_data)
+# 		if t % 100 == 0:
+# 			print("Epoch ", t, "MSE: ", loss.item())
+# 		hist[t] = loss.item()
 
-		# Zero out gradient, else they will accumulate between epochs
-		optimiser.zero_grad()
+# 		# Zero out gradient, else they will accumulate between epochs
+# 		optimiser.zero_grad()
 
-		# Backward pass
-		loss.backward()
+# 		# Backward pass
+# 		loss.backward()
 
-		# Update parameters
-		optimiser.step()
+# 		# Update parameters
+# 		optimiser.step()
 
-	return mylstm
+# 	return mylstm
 
-def construct_layers(timestep=215, block_size=2048):
-	print('adding layers...\n')
-	model = Sequential()
-	model.add(LSTM(block_size, input_shape=(timestep, block_size), return_sequences=True))
-	#model.add(Dropout(0.2))
-	model.add(Dense(block_size))
-	#model.add(Activation('linear'))
-	return model
+# def construct_layers(timestep=215, block_size=2048):
+# 	print('adding layers...\n')
+# 	model = Sequential()
+# 	model.add(LSTM(block_size, input_shape=(timestep, block_size), return_sequences=True))
+# 	#model.add(Dropout(0.2))
+# 	model.add(Dense(block_size))
+# 	#model.add(Activation('linear'))
+# 	return model
 
-def train_model(model, x_data, y_data, nb_epochs=1):
-	print('training...\n')
-	optimizer = RMSprop(lr=0.01)
-	model.compile(loss='mse', optimizer='rmsprop')
-	model.fit(np.asarray(x_data), np.asarray(y_data), batch_size=500, epochs=nb_epochs, verbose=2)
-	#Make it save weights
-	print('tttt\n\n\n')
-	return model
-
-
-def run():
-	out_file = 'train'
-	'''					sample rate * clip len / seq_len '''
-	block_size = 2700	# Around min # of samples for human to (begin to) percieve a tone at 16Hz
-	seq_len = 215
+# def train_model(model, x_data, y_data, nb_epochs=1):
+# 	print('training...\n')
+# 	optimizer = RMSprop(lr=0.01)
+# 	model.compile(loss='mse', optimizer='rmsprop')
+# 	model.fit(np.asarray(x_data), np.asarray(y_data), batch_size=500, epochs=nb_epochs, verbose=2)
+# 	#Make it save weights
+# 	print('tttt\n\n\n')
+# 	return model
 
 
-	'''*****(pseudo-code)*****
-	corpus = []
-	for file in dir:
-		if file.endswith(.wav):
-			music, rate = wav_to_np(file)
-			music = music.sum(axis=1)/2
-			corpus.extend(music)'''
+# def run():
+# 	out_file = 'train'
+# 	'''					sample rate * clip len / seq_len '''
+# 	block_size = 2700	# Around min # of samples for human to (begin to) percieve a tone at 16Hz
+# 	seq_len = 215
+
+
+# 	'''*****(pseudo-code)*****
+# 	corpus = []
+# 	for file in dir:
+# 		if file.endswith(.wav):
+# 			music, rate = wav_to_np(file)
+# 			music = music.sum(axis=1)/2
+# 			corpus.extend(music)'''
 			
-	x_data, y_data = make_tensors('./ChillingMusic.wav', seq_len, block_size)
+# 	x_data, y_data = make_tensors('./ChillingMusic.wav', seq_len, block_size)
 
 
-	model = construct_layers(seq_len, block_size)
-	model = train_model(model, x_data, y_data)
-	masterpiece = compose(model, x_data)
+# 	model = construct_layers(seq_len, block_size)
+# 	model = train_model(model, x_data, y_data)
+# 	masterpiece = compose(model, x_data)
 
 	
-	masterpiece = convert_sample_blocks_to_np_audio(masterpiece[0]) #Not final, but works for now
-	#print(masterpiece) #			Should now be a flat list
-	masterpiece = write_np_as_wav(masterpiece)
-	play_music() # Seems to get stuck here (at least sometimes). Need some fix for this. I don't remember if the gui version has that problem...
-	print('\n\nWas it a masterpiece (or at least an improvement)?')
+# 	masterpiece = convert_sample_blocks_to_np_audio(masterpiece[0]) #Not final, but works for now
+# 	#print(masterpiece) #			Should now be a flat list
+# 	masterpiece = write_np_as_wav(masterpiece)
+# 	play_music() # Seems to get stuck here (at least sometimes). Need some fix for this. I don't remember if the gui version has that problem...
+# 	print('\n\nWas it a masterpiece (or at least an improvement)?')
 
-	'''Add CNN classifier after converting from Keras to Tensorflow to use generative-adversarial model.
-	'''
+# 	'''Add CNN classifier after converting from Keras to Tensorflow to use generative-adversarial model.
+# 	'''
 
-	return
+# 	return
 
 
-def load_model():
-	pass
+# def load_model():
+# 	pass
 
-def get_seed(seed_len, data_train):
-	nb_examples, seq_len = data_train.shape[0], data_train.shape[1]
-	r = np.random.randint(data_train.shape[0])
-	seed = np.concatenate(tuple([data_train[r+i] for i in range(seed_len)]), axis=0)
-	#1 example by (# of examples) timesteps by (# of timesteps) frequencies
-	seed_selection = np.reshape(seed, (1, seed.shape[0], seed.shape[1]))
-	return seed_selection
+# def get_seed(seed_len, data_train):
+# 	nb_examples, seq_len = data_train.shape[0], data_train.shape[1]
+# 	r = np.random.randint(data_train.shape[0])
+# 	seed = np.concatenate(tuple([data_train[r+i] for i in range(seed_len)]), axis=0)
+# 	#1 example by (# of examples) timesteps by (# of timesteps) frequencies
+# 	seed_selection = np.reshape(seed, (1, seed.shape[0], seed.shape[1]))
+# 	return seed_selection
 
-def compose(model, x_data):
-	'''Could add choice of length of composition (roughly)'''
-	print('composing...\n')
-	generation = []
-	muse = get_seed(1, x_data)
-	for ind in range(1):
-		print('predicting')
-		preds = model.predict(muse)
-		print(preds)
-		print(len(preds), len(preds[0]), len(preds[0][0]))
-		generation.extend(preds)
-	return generation
+# def compose(model, x_data):
+# 	'''Could add choice of length of composition (roughly)'''
+# 	print('composing...\n')
+# 	generation = []
+# 	muse = get_seed(1, x_data)
+# 	for ind in range(1):
+# 		print('predicting')
+# 		preds = model.predict(muse)
+# 		print(preds)
+# 		print(len(preds), len(preds[0]), len(preds[0][0]))
+# 		generation.extend(preds)
+# 	return generation
 
 
 
@@ -335,25 +337,16 @@ def compose(model, x_data):
 
 
 UPLOAD_FOLDER = '/uploads'
-ALLOWED_EXTENSIONS = {'txt', 'pdf', 'png', 'jpg', 'jpeg', 'wav'}
-
-
-
-# @app.route('/')
-# def hello_world():
-#     resp = make_response('Hello, World!');
-#     resp.set_cookie('same-site-cookie', 'foo', samesite='Lax');
-#     resp.set_cookie('cross-site-cookie', 'bar', samesite='Lax', secure=True);
-#     return resp
+ALLOWED_EXTENSIONS = {'txt', 'pdf', 'png', 'jpg', 'jpeg', 'wav'} # remove all but wav
 
 def allowed_file(filename):
 	return '.' in filename and \
 		   filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
 
 @app.route('/api/sendaudio', methods=['POST'])
-def predict_from_upload():
-	block_size = 2700
-	seq_len = 215
+def get_uploaded_file():
+	# block_size = 2700
+	# seq_len = 215
 	print('in send audio /n/n/n')
 
 	# check if the post request has the file part
@@ -379,30 +372,6 @@ def predict_from_upload():
 		}
 		return jsonify(response)
 
-		# with app.open_resource(upl_str) as f:
-		# 	contents = f.read()
-
-		# print(contents)
-		# #with open(upl_str, 'r') as f:
-		# x_data, y_data = make_tensors(upl_str, seq_len, block_size)
-		# #file.save(os.path.join(app.config['UPLOAD_FOLDER'], filename))
-		
-		
-		# return redirect(url_for('uploaded_file',
-		# 						filename=filename))
-
-
-
-	#filepath = os.join('./uploads', request.get_json()['filename']) 
-	#print('made it')
-	#x_data, y_data = make_tensors(filepath, seq_len, block_size)
-
-	#model = tf.keras.models.load_model('~/code/models/soundmodel.k')
-
-	
-	#masterpiece = compose(model, x_data)
-	#session['my_result'] = masterpiece
-
 
 @app.route('/api/getfile/<audiofile>')
 def send_file(audiofile):
@@ -411,25 +380,26 @@ def send_file(audiofile):
 	except FileNotFoundError:
 		abort(404)
 
-@app.route('/api/test', methods=['GET'])
-def test():
-	try:
-		return send_from_directory(os.getcwd(),filename="./Bossa-nova-beat-music-loop.wav", as_attachment=True)
-	except FileNotFoundError:
-		abort(404)
+# @app.route('/api/test', methods=['GET'])
+# def test():
+# 	try:
+# 		return send_from_directory(os.getcwd(),filename="./Bossa-nova-beat-music-loop.wav", as_attachment=True)
+# 	except FileNotFoundError:
+# 		abort(404)
 
 
 @app.route('/api/generate', methods=['POST'])
 def generate():
+	# model = Singleton()
 	block_size = 2700
 	seq_len = 215
 
 
-	print(request.form['firstGen'], 'hi\n')
+	# print(request.form['firstGen'], 'hi\n')
 	upl_str = request.form['filePath']
-	is_first_gen = request.form['firstGen']
-	if is_first_gen == "1":
-		print(is_first_gen, '\n')
+	# is_first_gen = request.form['firstGen']
+	# if is_first_gen == "1":
+	# print(is_first_gen, '\n')
 
 	x_data, y_data = make_tensors(upl_str, seq_len, block_size)
 	#model = construct_layers(seq_len, block_size)
@@ -437,15 +407,19 @@ def generate():
 	
 	#if is_first_gen == "1":
 	print('loading model')
-	model = tf.keras.models.load_model('soundmodel.k')
-	masterpiece = compose(model, x_data)
+	# call these three from lstmnet.py
+	#model = tf.keras.models.load_model('soundmodel.k') # lstmnet.singleton() inst.get_model()
+
+	# model = model.get_model()  ----
+	print('calling compose')
+	masterpiece = lstmnet.compose(model, x_data, graph)
 	masterpiece = convert_sample_blocks_to_np_audio(masterpiece[0])
 
 
 	masterpiece = write_np_as_wav(masterpiece, sample_rate=44100, filename='new.wav')
 	print('wrote np as wav')
 	wpath = os.path.join(os.getcwd(), 'new.wav')
-	print(wpath, open(wpath))
+	# print(wpath, open(wpath))
 	response = {
 		'wavPath': wpath
 	}
