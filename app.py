@@ -376,7 +376,11 @@ def get_uploaded_file():
 @app.route('/api/getfile/<audiofile>')
 def send_file(audiofile):
 	try:
-		return send_from_directory(os.getcwd(),filename=audiofile, as_attachment=True)
+		r = send_from_directory(os.getcwd(),filename=audiofile, as_attachment=True)
+		r.set_cookie("ret_file", secure=True ,samesite=None)
+		r.headers.add("Set-Cookie", "HttpOnly;Secure;SameSite=None") #r.setHeader
+		print(r)
+		return r
 	except FileNotFoundError:
 		abort(404)
 

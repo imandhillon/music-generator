@@ -34,32 +34,6 @@
         </div>
     </div>
 
-        <!-- <div class="field">
-
-            <div class="file is boxed is-primary" disabled>
-                <label class="file-label">
-
-                    <input type="file"
-                        ref="file"
-                        @change="selectFile"
-                        class="file-input"
-                    />
-                    <v-btn depressed @click="refs.fileInput.click()">Choose a wav File</v-btn> +
-                    
-                    <span class ="file-cta">
-                        <span class="file-icon">
-                            <i class="fas fa-upload"></i>
-                        </span>
-                        <span class="file-label">
-                            Choose a .wav file
-                        </span>
-                    </span>
-                    
-
-                </label>
-                
-            </div>
-        </div> -->
         <div class="gen">
             <button class="button is-info">Send and Generate Audio</button>
 
@@ -81,14 +55,17 @@
             <br>
             <br>
             <audio crossOrigin="anonymous"
-                :src = "showVisualizer"
+                :src = "initAudio"
                 id = "audio" controls>
                 audio element not supported
-                <!-- "http://127.0.0.1:5000/api/getfile/new.wav"  -->
             </audio>
         </div>
-        </div>
 
+        
+        </div>
+        <!-- <div class="reset">
+            <v-btn class="resetBtn" v-on:click="initAudio" color='orange'>Reset to go again!</v-btn>
+        </div> -->
 
         <!-- <av-bars
             audio-src="http://127.0.0.1:5000/api/getfile/new.wav">
@@ -103,29 +80,7 @@
       :caps-height="2"
       audio-src="http://127.0.0.1:5000/api/getfile/new.wav"
     ></av-bars> -->
-            <!-- <div class="dropzone">
-                    <input 
-                        type="file"
-                        ref="file"
-                        @change="selectFile" 
-                        class="input-file"
-                    />
-
-                <p v-if="!uploading" class="call-to-action">
-                    Drag your file here
-                </p>
-                <p v-if="uploading" class="progress-bar">
-
-                </p>
-
             
-             <label for="file" class="label">Upload File</label>
-            <input type="file"
-                ref="file"
-                @change="selectFile"
-            /> 
-
-        </div> -->
 
         <span v-if="file" class="file-name">
             {{file.name}} 
@@ -274,40 +229,39 @@ export default {
                 axios.post('http://127.0.0.1:5000/api/generate', formData)
                 .then(response => {
                     //call playfile
-                    this.firstGen = "2"
-                    this.showVisualizer();
+
+                    // dec params
+                    this.initAudio();
                 })
             }
             if (!this.canGen){
                 console.log(this.canGen)
             }
         },
-        dzFileAdd() {
-            // files = document.getElementById("drop1").getAcceptedFiles()
-            // console.log(files)
-        },
-        showVisualizer() {
-            // Credit to Cornelius Gee for the Visualizer code. https://codepen.io/cgyc8866/pen/wGRqLw
-            console.log('visual');
-            // document.getElementById("audiovis").style.left = "100px";
-            // document.getElementById("audiovis").style.top  = "15px";
-            
-            var audio = document.getElementById('audio');
-            console.log('var audioo');
+        initAudio(removeAudioFlag) {
+            this.canGen = false;
+
+            var audioRemove = document.getElementById("audio");
+            audioRemove.remove();
+
+            document.getElementById('audiovis').insertAdjacentHTML('beforeend', "<audio id='audio', src='http://127.0.0.1:5000/api/getfile/new.wav' crossOrigin='anonymous' controls></audio>");
+            var audio = document.getElementById("audio");
             var ctx = new AudioContext();
-            console.log('new ctx');
-            audio.src = "http://127.0.0.1:5000/api/getfile/new.wav";
-            console.log('src');
+
             var analyser = ctx.createAnalyser();
-            console.log('made analyzer');
             var audioSrc = ctx.createMediaElementSource(audio);
-            console.log('mediaelemsrc');
             
-            // we have to connect the MediaElementSource with the analyser 
-            audioSrc.connect(analyser); //breaks here on 2nd run 
-            console.log('con audsrc');
+            // Connect the MediaElementSource with the analyser 
+            audioSrc.connect(analyser);
             analyser.connect(ctx.destination);
-            console.log('con analyze');
+            
+            this.canGen = true;
+    
+            this.showVisualizer(audioSrc, analyser, ctx, audio);
+        },
+        showVisualizer(audioSrc, analyser, ctx, audio) {
+            // Credit to Cornelius Gee for the Visualizer code. https://codepen.io/cgyc8866/pen/wGRqLw
+
             // we could configure the analyser: e.g. analyser.fftSize (for further infos read the spec)
             // analyser.fftSize = 64;
             // frequencyBinCount tells you how many values you'll receive from the analyser
@@ -357,8 +311,11 @@ export default {
 
             this.loading = false;
             audio.play();
-            this.reset(audioSrc, analyser, ctx, audio);
+            this.firstGen = "2"
+            //this.initAudio(this.firstGen);
         },
+
+
         reset(audioSrc, analyser, ctx, audio) {
             console.log('resetting')
             this.$refs.myVueDropzone.enable()
@@ -366,10 +323,11 @@ export default {
             this.file = ""
             this.canGen = false
             console.log(this.file, this.filepath)
-            audioSrc.disconnect();//analyser);
-            analyser.disconnect();//ctx.destination);
-            audio.src = "";
-            ctx.close();
+            audioSrc.disconnect(analyser);
+            analyser.disconnect(ctx.destination);
+            audio.remove();
+            //audio.src = "";
+            //ctx.close();
         }
         // initWebAudioApi () {
         //     // create a new audio context
@@ -479,6 +437,7 @@ export default {
         margin: auto;
         text-align: center;
         padding: 15px;
+        font-family: Helvetica ,Arial, serif
     }
     /* img.mainimg {
         height: 10%;
@@ -508,6 +467,24 @@ export default {
     }
     .instructions {
         display: inline-block;
+    }
+    .resetBtn {
+        font-family: Times, Arial, Helvetica, sans-serif;
+        color:rgb(255, 255, 255);
+        margin: auto;
+        text-align: center;
+        padding: 15px;
+        padding-bottom: 25px;
+    }
+    .reset {
+        padding-bottom: 40px;
+    }
+    .v-btn {
+        text-transform:none !important;
+        font-size: 18px;
+        font-family: Arial, Helvetica, sans-serif;
+        font-weight:550;
+
     }
 
 </style>
