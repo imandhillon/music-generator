@@ -5,7 +5,6 @@ import os
 import sys
 import numpy as np
 import tensorflow as tf
-#from tensorflow.contrib import rnn
 import scipy.io.wavfile as wav
 import wave
 import pyaudio
@@ -21,14 +20,6 @@ from keras.preprocessing import sequence
 from keras.models import Sequential
 from keras.optimizers import RMSprop
 from keras.models import load_model
-
-# torch code (May remove)
-# import torch
-# import torch.nn as nn
-# import torch.nn.functional as F
-# import torch.optim as optim
-
-# torch.manual_seed(1)
 
 from flask import Flask, jsonify, request, flash, redirect, url_for
 from flask_cors import CORS
@@ -97,17 +88,6 @@ def np_to_sample(music, block_size=2048):
 	blocks = list(blocks)
 	print(len(blocks),len(blocks[0]))
 
-
-	# while num_samples < total_samples:
-	# 	block = music[num_samples:num_samples+block_size]
-	# 	if(block.shape[0] < block_size):
-	# 		print('oy', block.shape)
-	# 		padding = np.zeros((block_size - block.shape[0]))
-	# 		block = np.concatenate((block, padding))
-	# 	blocks.append(block)
-	# 	num_samples += block_size
-	# print(len(blocks),len(blocks[0]), 448*2700)
-
 	return blocks
 
 def write_np_as_wav(X, sample_rate=44100, filename='new.wav'):
@@ -132,9 +112,6 @@ def serialize_corpus(x_train, y_train, seq_len=215):
 	total_seq = len(x_train)
 	print('total seq: ', total_seq)
 	print('max seq: ', seq_len)
-
-	# x = np.asarray(x_train)
-	# y = np.asarray(y_train)
 
 	while cur_seq + seq_len < total_seq:
 		seqs_x.append(x_train[cur_seq:cur_seq+seq_len])
@@ -187,157 +164,15 @@ def make_tensors(file, seq_len=215, block_size=2048, out_file='train'):
 	x_data = np.asarray(x_data)
 	y_data = np.asarray(y_data)
 
-	# np.save(out_file+'_mean', mean_x)
-	# np.save(out_file+'_var', std_x)
-	# np.save(out_file+'_x', x_data)
-	# np.save(out_file+'_y', y_data)
 	print('Done!')
 
 	print('mean/std shape: ', mean_x.shape, '\n', std_x.shape)
 	return x_data, y_data
 
-# def pytorch_buildmodel(x_data, y_data, nb_epochs=1, seq_len=215, block_size=2048):
-# 	#input_shape = (seq_len, block_size)
-# 	learning_rate=0.01
-# 	num_epochs = 1
-# 	batch_size = 2
-# 	#lstm = torch.nn.LSTM(input_size=block_size, hidden_size=block_size)
-# 	print(x_data.shape,'xshape')
-# 	print(y_data.shape, 'yshape')
-	
-# 	x_data = np.swapaxes(x_data, 1, 0)
-# 	y_data = np.swapaxes(y_data, 1,0)
-
-# 	print(x_data.shape, type(x_data),'\nxdata\n')
-
-# 	dims = x_data.shape
-# 	#exit()
-# 	mylstm = nnet.LSTM(dims[2], 32, batch_size)
-
-# 	loss_fn = torch.nn.MSELoss(size_average=False)
-# 	optimiser = torch.optim.Adam(mylstm.parameters(), lr=learning_rate)
-
-# 	#####################
-# 	# Train model
-# 	#####################
-
-# 	hist = np.zeros(num_epochs)
-# 	x_data = torch.tensor(x_data)
-# 	y_data = torch.tensor(y_data)
-
-# 	for t in range(num_epochs):
-# 		# Clear stored gradient
-# 		mylstm.zero_grad()
-		
-# 		# Initialise hidden state
-# 		# Don't do this if you want your LSTM to be stateful
-# 		mylstm.hidden = mylstm.init_hidden()
-		
-# 		# Forward pass
-# 		y_pred = mylstm(x_data)
-# 		print(type(y_pred), type(y_data))
-# 		exit()
-# 		loss = loss_fn(y_pred, y_data)
-# 		if t % 100 == 0:
-# 			print("Epoch ", t, "MSE: ", loss.item())
-# 		hist[t] = loss.item()
-
-# 		# Zero out gradient, else they will accumulate between epochs
-# 		optimiser.zero_grad()
-
-# 		# Backward pass
-# 		loss.backward()
-
-# 		# Update parameters
-# 		optimiser.step()
-
-# 	return mylstm
-
-# def construct_layers(timestep=215, block_size=2048):
-# 	print('adding layers...\n')
-# 	model = Sequential()
-# 	model.add(LSTM(block_size, input_shape=(timestep, block_size), return_sequences=True))
-# 	#model.add(Dropout(0.2))
-# 	model.add(Dense(block_size))
-# 	#model.add(Activation('linear'))
-# 	return model
-
-# def train_model(model, x_data, y_data, nb_epochs=1):
-# 	print('training...\n')
-# 	optimizer = RMSprop(lr=0.01)
-# 	model.compile(loss='mse', optimizer='rmsprop')
-# 	model.fit(np.asarray(x_data), np.asarray(y_data), batch_size=500, epochs=nb_epochs, verbose=2)
-# 	#Make it save weights
-# 	print('tttt\n\n\n')
-# 	return model
-
-
-# def run():
-# 	out_file = 'train'
-# 	'''					sample rate * clip len / seq_len '''
-# 	block_size = 2700	# Around min # of samples for human to (begin to) percieve a tone at 16Hz
-# 	seq_len = 215
-
-
-# 	'''*****(pseudo-code)*****
-# 	corpus = []
-# 	for file in dir:
-# 		if file.endswith(.wav):
-# 			music, rate = wav_to_np(file)
-# 			music = music.sum(axis=1)/2
-# 			corpus.extend(music)'''
-			
-# 	x_data, y_data = make_tensors('./ChillingMusic.wav', seq_len, block_size)
-
-
-# 	model = construct_layers(seq_len, block_size)
-# 	model = train_model(model, x_data, y_data)
-# 	masterpiece = compose(model, x_data)
-
-	
-# 	masterpiece = convert_sample_blocks_to_np_audio(masterpiece[0]) #Not final, but works for now
-# 	#print(masterpiece) #			Should now be a flat list
-# 	masterpiece = write_np_as_wav(masterpiece)
-# 	play_music() # Seems to get stuck here (at least sometimes). Need some fix for this. I don't remember if the gui version has that problem...
-# 	print('\n\nWas it a masterpiece (or at least an improvement)?')
-
-# 	'''Add CNN classifier after converting from Keras to Tensorflow to use generative-adversarial model.
-# 	'''
-
-# 	return
-
-
-# def load_model():
-# 	pass
-
-# def get_seed(seed_len, data_train):
-# 	nb_examples, seq_len = data_train.shape[0], data_train.shape[1]
-# 	r = np.random.randint(data_train.shape[0])
-# 	seed = np.concatenate(tuple([data_train[r+i] for i in range(seed_len)]), axis=0)
-# 	#1 example by (# of examples) timesteps by (# of timesteps) frequencies
-# 	seed_selection = np.reshape(seed, (1, seed.shape[0], seed.shape[1]))
-# 	return seed_selection
-
-# def compose(model, x_data):
-# 	'''Could add choice of length of composition (roughly)'''
-# 	print('composing...\n')
-# 	generation = []
-# 	muse = get_seed(1, x_data)
-# 	for ind in range(1):
-# 		print('predicting')
-# 		preds = model.predict(muse)
-# 		print(preds)
-# 		print(len(preds), len(preds[0]), len(preds[0][0]))
-# 		generation.extend(preds)
-# 	return generation
-
-
-
-
 
 
 UPLOAD_FOLDER = '/uploads'
-ALLOWED_EXTENSIONS = {'txt', 'pdf', 'png', 'jpg', 'jpeg', 'wav'} # remove all but wav
+ALLOWED_EXTENSIONS = {'wav'}
 
 def allowed_file(filename):
 	return '.' in filename and \
@@ -347,7 +182,7 @@ def allowed_file(filename):
 def get_uploaded_file():
 	# block_size = 2700
 	# seq_len = 215
-	print('in send audio /n/n/n')
+	print('in send audio')
 
 	# check if the post request has the file part
 	if 'file' not in request.files:
@@ -384,37 +219,18 @@ def send_file(audiofile):
 	except FileNotFoundError:
 		abort(404)
 
-# @app.route('/api/test', methods=['GET'])
-# def test():
-# 	try:
-# 		return send_from_directory(os.getcwd(),filename="./Bossa-nova-beat-music-loop.wav", as_attachment=True)
-# 	except FileNotFoundError:
-# 		abort(404)
-
-
 @app.route('/api/generate', methods=['POST'])
 def generate():
 	# model = Singleton()
 	block_size = 2700
 	seq_len = 215
 
-
-	# print(request.form['firstGen'], 'hi\n')
 	upl_str = request.form['filePath']
-	# is_first_gen = request.form['firstGen']
-	# if is_first_gen == "1":
-	# print(is_first_gen, '\n')
 
 	x_data, y_data = make_tensors(upl_str, seq_len, block_size)
 	#model = construct_layers(seq_len, block_size)
 	#model = train_model(model, x_data, y_data)
-	
-	#if is_first_gen == "1":
-	print('loading model')
-	# call these three from lstmnet.py
-	#model = tf.keras.models.load_model('soundmodel.k') # lstmnet.singleton() inst.get_model()
 
-	# model = model.get_model()  ----
 	print('calling compose')
 	masterpiece = lstmnet.compose(model, x_data, graph)
 	masterpiece = convert_sample_blocks_to_np_audio(masterpiece[0])
@@ -423,7 +239,6 @@ def generate():
 	masterpiece = write_np_as_wav(masterpiece, sample_rate=44100, filename='new.wav')
 	print('wrote np as wav')
 	wpath = os.path.join(os.getcwd(), 'new.wav')
-	# print(wpath, open(wpath))
 	response = {
 		'wavPath': wpath
 	}
@@ -436,17 +251,5 @@ def generate():
 	
 
 if __name__ == '__main__':
-	#run()
-	#m = construct_layers()
-	#optimizer = RMSprop(lr=0.01)
-	#m.compile(loss='mse', optimizer='rmsprop')
-
-	
-	print('l')
 	app.run(debug=True)
-	#model = tf.keras.models.load_model('soundmodel.k')
 	
-
-
-	#x_data, y_data = make_tensors('./ChillingMusic.wav', 215, 2700)
-	#pytorch_buildmodel(x_data, y_data)

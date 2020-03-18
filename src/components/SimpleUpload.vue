@@ -1,11 +1,6 @@
 <template>
     <form @submit.prevent="sendFile" enctype="multipart/form-data">
 
-    <!-- <header>
-        <h1>Music Generator</h1>
-        <h2>Input a .wav file that is similar to what you want to hear<br><br></h2>
-    </header> -->
-
     <nav class="navbar navbar-inverse navbar-fixed-top">
     <div class="container-fluid">
         <div class="navbar-header">
@@ -13,12 +8,11 @@
         </div>
         <ul class="nav navbar-nav">
         <li class="active"><a href="imandhillon.com">imandhillon.com</a></li>
-        <!-- <li><a href="#">Page 1</a></li>
-        <li><a href="#">Page 2</a></li>
-        <li><a href="#">Page 3</a></li> -->
         </ul>
     </div>
     </nav>
+
+
 
     <div class="mainimgbox">
     <img class="mainimg" src="./musicwavescrop2.jpg" width="2000" height="30">
@@ -34,16 +28,23 @@
         </div>
     </div>
 
-        <div class="gen">
-            <button class="button is-info">Send and Generate Audio</button>
 
-            <!-- <button v-on:click="genAudio" class="button gen">Generate Audio!!</button> -->
+
+        <div class="gen">
+            <button class="button is-info" id="genBtn" disabled="true">Send and Generate Audio</button>
+
         </div>
 
         <div id="dropzone">
-            <vue-dropzone id="drop1" :options="dropOptions" ref="myVueDropzone"></vue-dropzone>
+            <vue-dropzone id="drop1" :options="dropOptions" ref="myVueDropzone"
+            @vdropzone-file-added="vfileAdd"
+            
+            ></vue-dropzone>
             
         </div>
+
+
+
         <div class="dz-av">
 
         <div id="audiovis">
@@ -61,11 +62,7 @@
             </audio>
         </div>
 
-        
         </div>
-        <!-- <div class="reset">
-            <v-btn class="resetBtn" v-on:click="initAudio" color='orange'>Reset to go again!</v-btn>
-        </div> -->
 
         <!-- <av-bars
             audio-src="http://127.0.0.1:5000/api/getfile/new.wav">
@@ -86,12 +83,8 @@
             {{file.name}} 
         </span>
 
-
-
         
     </form>
-
-    
 
 
 </template>
@@ -102,9 +95,6 @@ import axios from 'axios';
 import vueDropzone from "vue2-dropzone";
 import { BootstrapVue, IconsPlugin } from 'bootstrap-vue';
 import AudioVisual from 'vue-audio-visual';
-// import VueAudio from 'vue-audio'
-// import Vue from 'vue'
-// Vue.use(AudioVisual)
 
 export default {
     name: "SimpleUpload",
@@ -121,64 +111,32 @@ export default {
             filepath: "",
             firstGen: "1",
 
-            // audio: document.getElementById('audio'),
-            // ctx: new AudioContext(),
-            // analyser: this.ctx.createAnalyser(),
-            // audioSrc: this.ctx.createMediaElementSource(audio),
-
             dzDisabled: false,
             dropOptions: {
                 url: "http://127.0.0.1:5000/api/sendaudio",
                 acceptedFiles: 'audio/wav',
                 maxFilesize: 200,
                 autoProcessQueue: false,
-                // accept: function(file, done) {
-                    
-                // },
-                // init: function() {
-                //     this.on("addedfile", function(file) {document.getElementById("drop1").disabled; })
-                // }
+                maxFiles: 1,
+    
             }
         }
     },
     components: {
         vueDropzone,
-        // 'vue-audio': VueAudio,
     },
     methods: {
-        selectFile() {
-            const file = this.$refs.file.files[0]
-            const allowedTypes = ['audio/wav']
-            const MAX_SIZE = 200000000
-            const tooLarge = false//file.size > MAX_SIZE
-            const filepath = ""
-
-            if(allowedTypes.includes(file.type) && !tooLarge) {
-                this.file = file // this.file.name
-                this.filepath = "" 
-                this.error = false
-                this.msg = ""
-                this.dzDisabled = true
-                this.$refs.myVueDropzone.disableDropzone()
-                console.log(file, this.dzDisabled)
-                
-            }
-            else {
-                this.error = true
-                this.msg = tooLarge ? `File too large. Max Size is ${MAX_SIZE/100000}Mb`:"Only wav files are allowed"
-                this.canGen = false
-            }
+        vfileAdd(file) {
+            var genBtn = document.getElementById("genBtn"); 
+            genBtn.disabled = false;
         },
+        
         async sendFile() {
             const formData = new FormData();
             this.file = this.$refs.myVueDropzone.getAcceptedFiles()[0]
             formData.append('file', this.file)
             try {
                 // if we click send without having selected a file, 
-                //console.log()
-                // console.log(this.$refs.myVueDropzone.getAcceptedFiles())
-                // console.log(this.$refs.myVueDropzone.processQueue())
-
                 console.log(this.$refs.myVueDropzone.getAcceptedFiles())
                 this.loading = true;
                 
@@ -195,7 +153,6 @@ export default {
                     this.file = ""
                     this.error = false
                     console.log('in send')
-                    // this.test()
                     this.genAudio()
                 })
                 .catch(error => {
@@ -209,32 +166,20 @@ export default {
                 this.error = true
             }
         },
-        // test() {
-        //     console.log('test')
-        //     var audio = new Audio('http://127.0.0.1:5000/api/test');
-        //     this.showVisualizer();
-        // },
-        playFile() {
-            console.log('Playing audio')
-            var audio = new Audio('http://127.0.0.1:5000/api/getfile/new.wav');
-            this.showVisualizer()
-            // audio.play();
-        },
         genAudio() {
-            if (this.canGen){
+            if (this.canGen === true){
+                var genBtn = document.getElementById("genBtn"); 
+                genBtn.disabled = true;
                 console.log(this.filepath, 'filepath')
                 const formData = new FormData();
                 formData.append('filePath', this.filepath)
                 formData.append('firstGen', this.firstGen)
                 axios.post('http://127.0.0.1:5000/api/generate', formData)
                 .then(response => {
-                    //call playfile
-
-                    // dec params
                     this.initAudio();
                 })
             }
-            if (!this.canGen){
+            if (this.canGen === false){
                 console.log(this.canGen)
             }
         },
@@ -254,12 +199,14 @@ export default {
             // Connect the MediaElementSource with the analyser 
             audioSrc.connect(analyser);
             analyser.connect(ctx.destination);
-            
-            this.canGen = true;
     
             this.showVisualizer(audioSrc, analyser, ctx, audio);
         },
         showVisualizer(audioSrc, analyser, ctx, audio) {
+            //this.$refs.myVueDropzone.enable();
+            this.canGen = true;
+            //var genBtn = document.getElementById("genBtn"); 
+            //genBtn.disabled = false;
             // Credit to Cornelius Gee for the Visualizer code. https://codepen.io/cgyc8866/pen/wGRqLw
 
             // we could configure the analyser: e.g. analyser.fftSize (for further infos read the spec)
@@ -312,55 +259,22 @@ export default {
             this.loading = false;
             audio.play();
             this.firstGen = "2"
-            //this.initAudio(this.firstGen);
         },
 
-
-        reset(audioSrc, analyser, ctx, audio) {
-            console.log('resetting')
-            this.$refs.myVueDropzone.enable()
-            this.filepath = ""
-            this.file = ""
-            this.canGen = false
-            console.log(this.file, this.filepath)
-            audioSrc.disconnect(analyser);
-            analyser.disconnect(ctx.destination);
-            audio.remove();
-            //audio.src = "";
-            //ctx.close();
-        }
-        // initWebAudioApi () {
-        //     // create a new audio context
-        //     this.context = new (AudioContext || webkitAudioContext)();
-        //     // bind the context to our <audio /> element
-        //     this.source = this.context.createMediaElementSource(this.audio.base);
-        // }
     },
     computed: {
-        disableDropzone() {
-            // if (dzDisabled) {
-            //     document.getElementById("drop1").disabled = true;
-            // } else {
-            //     document.getElementById("drop1").disabled = false;
-            // }
-        },
+    
 
-        disableChooseButton () {
-
-        },
-
-        disableGenerate () {
-
+         disableGenerate () {
+             if (this.canGen == false) {
+                var genBtn = document.getElementById("genBtn"); 
+                genBtn.disabled = true;
+             }
         },
     },
-    // mounted() {
-    //     this.initWebAudioApi();
-    // },
     
 }
 </script>
-
-
 
 
 <style scoped>
@@ -373,13 +287,11 @@ export default {
         justify-content: center;
         width: 100%;
         height: 250px;
-        /* position: relative; */
     }
     .dropzone {
         min-height: 150px;
         width: 80%;
         padding: 10px 10px;
-        /* justify-content: center; */
         position: relative;
         
         margin: auto;
@@ -402,23 +314,13 @@ export default {
         z-index: 1;
         position: relative;
         justify-content: flex-start;
-        
-        /* margin: 80px; */
-        
-        /* border: 4px solid goldenrod; */
     }
     .audio {
         justify-content: center;
-        /* width: 80%; */
-        /* margin: auto; */
-        /* left: 40%; */
     }
     .canvas {
         position: absolute;
         justify-content: center;
-        /* width: 80%; */
-        /* margin: 0px 100px; */
-        /* left: 40%; */
         z-index: 1;
     }
 
@@ -430,8 +332,9 @@ export default {
         cursor: pointer;
     }
 
-    .dropzone.hover {
-        color: rgb(21, 161, 207);
+    .dropzone:hover {
+        color: rgb(5, 60, 78);
+        background: rgb(234, 136, 243);
     }
     .gen{
         margin: auto;
@@ -439,16 +342,6 @@ export default {
         padding: 15px;
         font-family: Helvetica ,Arial, serif
     }
-    /* img.mainimg {
-        height: 10%;
-        width: 80%;
-    } */
-
-    /* body {
-    background: #000;
-    text-align: center;
-    color: rgb(23, 168, 125);
-    } */
     a{
         color:yellow;
     }
