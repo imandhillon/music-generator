@@ -1,34 +1,9 @@
 <template>
     <form @submit.prevent="sendFile" enctype="multipart/form-data">
 
-    <nav class="navbar navbar-inverse navbar-fixed-top">
-    <div class="container-fluid">
-        <div class="navbar-header">
-        <a class="navbar-brand" href="#">AudioGen</a>
+        <div>
+            <image-plus-info :msg="msg" />
         </div>
-        <ul class="nav navbar-nav">
-        <li class="active"><a href="imandhillon.com">imandhillon.com</a></li>
-        </ul>
-    </div>
-    </nav>
-
-
-
-    <div class="mainimgbox">
-    <img class="mainimg" src="./musicwavescrop2.jpg" width="2000" height="30">
-    </div>
-
-    <div id='instructions'>
-        <br>Click or drag a .wav file onto the dropzone that sounds similar to the sound you want.<br> Then click the Generate Audio button and enjoy!
-    </div>
-
-    <div v-if="msg"
-        :class="`msg ${error ? 'is-danger' : 'is-success'}`" >
-        <div class="msg-body">{{msg}}
-        </div>
-    </div>
-
-
 
         <div class="gen">
             <button class="button is-info" id="genBtn" disabled="true">Send and Generate Audio</button>
@@ -95,19 +70,24 @@ import axios from 'axios';
 import vueDropzone from "vue2-dropzone";
 import { BootstrapVue, IconsPlugin } from 'bootstrap-vue';
 import AudioVisual from 'vue-audio-visual';
+import ImagePlusInfo from "@/components/ImagePlusInfo.vue"
 
 export default {
     name: "SimpleUpload",
+    components: {
+        vueDropzone,
+        ImagePlusInfo,
+    },
     data() {
         return{
             file: "",
             msg: "",
             error: false,
-            uploading: false,
+            //uploading: false,
             canGen: false,
-            count: 0,
+            //count: 0,
             loading: false,
-            isDisabled: true,
+            //isDisabled: true,
             filepath: "",
             firstGen: "1",
 
@@ -121,9 +101,6 @@ export default {
     
             }
         }
-    },
-    components: {
-        vueDropzone,
     },
     methods: {
         vfileAdd(file) {
@@ -203,10 +180,9 @@ export default {
             this.showVisualizer(audioSrc, analyser, ctx, audio);
         },
         showVisualizer(audioSrc, analyser, ctx, audio) {
-            //this.$refs.myVueDropzone.enable();
             this.canGen = true;
-            //var genBtn = document.getElementById("genBtn"); 
-            //genBtn.disabled = false;
+            this.$refs.myVueDropzone.enable()
+
             // Credit to Cornelius Gee for the Visualizer code. https://codepen.io/cgyc8866/pen/wGRqLw
 
             // we could configure the analyser: e.g. analyser.fftSize (for further infos read the spec)
@@ -293,7 +269,7 @@ export default {
         width: 80%;
         padding: 10px 10px;
         position: relative;
-        
+        transition: 0.6s;
         margin: auto;
         cursor: pointer;
         outline: 2px dashed rgb(109, 109, 109);

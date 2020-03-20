@@ -25,53 +25,49 @@
   <div id="app">
     <v-app>
       <v-content>
+        <NavBar />
         <simple-upload />
       </v-content>
     </v-app>
   </div>
 
-  <!-- <div class="section">
-    <div class="container">
-
-      <simple-upload />
-
-    </div>
-  </div> -->
 </template>
 
 <script>
 /* eslint-disable */
 import HelloWorld from './components/HelloWorld';
 import SimpleUpload from './components/SimpleUpload';
+import NavBar from './components/NavBar';
 
 export default {
   name: 'App',
   components: {
     HelloWorld,
+    NavBar,
     SimpleUpload,
   },
 
-  methods: {
+  // methods: {
 
-  },
+  // },
   
-  computed: {
-    isDisabled() {
-      const fileUploaded = this.canGen
+  // computed: {
+  //   isDisabled() {
+  //     const fileUploaded = this.canGen
 
-      console.log('comp')
+  //     console.log('comp')
 
 
-      return fileUploaded
-    }
-  },
+  //     return fileUploaded
+  //   }
+  // },
 
   data: () => ({
-    file: "",
-    msg: "",
-    error: false,
-    uploading: false,
-    canGen: false
+    // file: "",
+    // msg: "",
+    // error: false,
+    // uploading: false,
+    // canGen: false
   })
 };
 </script>

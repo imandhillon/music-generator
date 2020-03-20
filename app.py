@@ -73,7 +73,7 @@ def np_to_sample(music, block_size=2048):
 	blocks = []
 	total_samples = music.shape[0]
 	num_samples = 0
-	print(music.shape)
+	# print(music.shape)
 
 	rem = music.shape[0] % block_size
 	floor = int(np.floor(music.shape[0] / block_size))
@@ -84,9 +84,9 @@ def np_to_sample(music, block_size=2048):
 	
 	blocks = np.asarray(mus)
 	blocks = blocks.reshape((floor+1,block_size))
-	print(blocks.shape,'blocks')
+	# print(blocks.shape,'blocks')
 	blocks = list(blocks)
-	print(len(blocks),len(blocks[0]))
+	# print(len(blocks),len(blocks[0]))
 
 	return blocks
 
@@ -99,7 +99,7 @@ def write_np_as_wav(X, sample_rate=44100, filename='new.wav'):
 def convert_sample_blocks_to_np_audio(blocks):
 	song_np = np.concatenate(blocks)
 	#song_np = [item for sublist in song_np for item in sublist]
-	print(song_np, '\nConverted to numpy')
+	# print(song_np, '\nConverted to numpy')
 	return song_np
 
 def serialize_corpus(x_train, y_train, seq_len=215):
@@ -110,14 +110,14 @@ def serialize_corpus(x_train, y_train, seq_len=215):
 	seqs_y = []
 	cur_seq = 0
 	total_seq = len(x_train)
-	print('total seq: ', total_seq)
-	print('max seq: ', seq_len)
+	# print('total seq: ', total_seq)
+	# print('max seq: ', seq_len)
 
 	while cur_seq + seq_len < total_seq:
 		seqs_x.append(x_train[cur_seq:cur_seq+seq_len])
 		seqs_y.append(y_train[cur_seq:cur_seq+seq_len])
 		cur_seq += seq_len
-	print(len(seqs_x),len(seqs_x[0]),len(seqs_x[0][0]))
+	# print(len(seqs_x),len(seqs_x[0]),len(seqs_x[0][0]))
 
 	return seqs_x, seqs_y
 
@@ -137,7 +137,7 @@ def make_tensors(file, seq_len=215, block_size=2048, out_file='train'):
 
 	nb_examples = len(seqs_x)
 
-	print('\nCalculating mean and variance and saving data\n')
+	# print('\nCalculating mean and variance and saving data\n')
 	x_data = np.array(seqs_x)
 	y_data = np.array(seqs_y)
 
@@ -149,12 +149,12 @@ def make_tensors(file, seq_len=215, block_size=2048, out_file='train'):
 			for blocks in range(block_size):
 				x_data[examples][seqs][blocks] = seqs_x[examples][seqs][blocks]
 				y_data[examples][seqs][blocks] = seqs_y[examples][seqs][blocks]
-		print('Saved example ', (examples+1), 'of', nb_examples)
+		# print('Saved example ', (examples+1), 'of', nb_examples)
 	
 	mean_x = np.mean(np.mean(x_data, axis=0), axis=0) #Mean across num examples and num timesteps
 	std_x = np.sqrt(np.mean(np.mean(np.abs(x_data-mean_x)**2, axis=0), axis=0)) # STD across num examples and num timesteps
 	std_x = np.maximum(1.0e-8, std_x) #Clamp variance if too tiny
-	print('mean:', mean_x, '\n', 'std:', std_x)
+	# print('mean:', mean_x, '\n', 'std:', std_x)
 
 	x_data[:][:] -= mean_x #Mean 0
 	x_data[:][:] /= std_x #Variance 1
@@ -164,9 +164,9 @@ def make_tensors(file, seq_len=215, block_size=2048, out_file='train'):
 	x_data = np.asarray(x_data)
 	y_data = np.asarray(y_data)
 
-	print('Done!')
+	# print('Done!')
 
-	print('mean/std shape: ', mean_x.shape, '\n', std_x.shape)
+	# print('mean/std shape: ', mean_x.shape, '\n', std_x.shape)
 	return x_data, y_data
 
 
@@ -182,7 +182,7 @@ def allowed_file(filename):
 def get_uploaded_file():
 	# block_size = 2700
 	# seq_len = 215
-	print('in send audio')
+	# print('in send audio')
 
 	# check if the post request has the file part
 	if 'file' not in request.files:
@@ -198,7 +198,7 @@ def get_uploaded_file():
 		filename = secure_filename(file.filename)
 		upl_str = app.config['UPLOAD_FOLDER'] + "\\" + filename
 		file.save(upl_str)
-		print(file, type(file))
+		# print(file, type(file))
 
 		# Now send upl_str back as json return. Vue side will now enable gen
 		# pass uplstr into gen to use
@@ -214,14 +214,13 @@ def send_file(audiofile):
 		r = send_from_directory(os.getcwd(),filename=audiofile, as_attachment=True)
 		r.set_cookie("ret_file", secure=True ,samesite=None)
 		r.headers.add("Set-Cookie", "HttpOnly;Secure;SameSite=None") #r.setHeader
-		print(r)
+		# print(r)
 		return r
 	except FileNotFoundError:
 		abort(404)
 
 @app.route('/api/generate', methods=['POST'])
 def generate():
-	# model = Singleton()
 	block_size = 2700
 	seq_len = 215
 
@@ -231,18 +230,18 @@ def generate():
 	#model = construct_layers(seq_len, block_size)
 	#model = train_model(model, x_data, y_data)
 
-	print('calling compose')
+	# print('calling compose')
 	masterpiece = lstmnet.compose(model, x_data, graph)
 	masterpiece = convert_sample_blocks_to_np_audio(masterpiece[0])
 
 
 	masterpiece = write_np_as_wav(masterpiece, sample_rate=44100, filename='new.wav')
-	print('wrote np as wav')
+	# print('wrote np as wav')
 	wpath = os.path.join(os.getcwd(), 'new.wav')
 	response = {
 		'wavPath': wpath
 	}
-	print(wpath)
+	# print(wpath)
 	K.clear_session()
 
 
